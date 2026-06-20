@@ -139,6 +139,22 @@ VITE_API_URL="http://localhost:5000/api"
 
 ---
 
+## 📂 Project Structure
+
+```text
+Py-Nexus
+├── backend/                  # Express.js backend API server
+├── frontend/                 # React 19 + Vite frontend application
+├── prisma/                   # Database schemas, migrations, and seeds
+├── docs/                     # Project screenshots and assets
+│   └── screenshots/          # Platform preview screenshots
+├── README.md                 # Main setup and documentation guide
+├── LICENSE                   # MIT License
+└── .env.example              # Master environment configurations
+```
+
+---
+
 ## 💻 Installation & Setup Guide
 
 ### Prerequisites
