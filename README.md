@@ -12,6 +12,19 @@ Built with React 19, Express, and PostgreSQL, the platform implements strict tim
 
 ---
 
+## 📊 Highlights
+
+* **Enterprise-grade Internship & Learning Management Platform** — Unified workflows for onboarding, curriculum modules tracking, and mentoring.
+* **Role-Based Access Control (RBAC)** — Granular permission checks verified dynamically on every endpoint query.
+* **Two-Factor Authentication (2FA)** — Enhanced verification using Time-based One-Time Passwords (TOTP) and custom QR visualizers.
+* **Attendance Tracking with Geolocation** — Real-time coordinates logging utilizing native browser geolocation APIs.
+* **AI-Powered Report Evaluation** — Automated report grading and customized learning suggestions driven by the Google Gemini API.
+* **Certificate Verification System** — Publicly verifiable course certificates authenticated by unique SHA256 hashes.
+* **React + Express + PostgreSQL + Prisma** — Full stack built with React 19, Express, PostgreSQL database, and Prisma ORM.
+* **Modular and Scalable Architecture** — Clean separation of concerns with controllers, services, and middlewares.
+
+---
+
 ## 📖 Project Overview
 
 Enterprise internship programs struggle with fragmented tools for attendance, course progress, grading, and mentorship. Py Nexus solves this by offering a unified, high-security dashboard for students, mentors, and administrators. 
