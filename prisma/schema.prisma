@@ -1,0 +1,408 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+model User {
+  id                Int           @id @default(autoincrement())
+  name              String
+  email             String        @unique
+  password          String
+  role              UserRole      @default(STUDENT)
+  createdAt         DateTime      @default(now()) @map("created_at")
+  enrollments       Enrollment[]
+  threads           ForumThread[]
+  reports           Report[]      // Reports submitted by the intern
+  articles          Article[]     // Articles authored by the admin/instructor
+  
+  // Profile Information
+  department        String?       @default("Artificial Intelligence")
+  college           String?       @default("Py Nexus Academy")
+  dob               String?
+  year              String?       @default("3rd Year")
+  linkedin          String?
+  skills            String?       @default("React, Node.js, SQL")
+
+  // Core & RBAC Organization mappings
+  organizationId    Int?          @map("organization_id")
+  organization      Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  departmentId      Int?          @map("department_id")
+  deptRef           Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  roleId            Int?          @map("role_id")
+  roleRef           Role?         @relation(fields: [roleId], references: [id], onDelete: SetNull)
+  
+  // Internship Program & Batch mappings
+  programId         Int?               @map("program_id")
+  programRef        InternshipProgram? @relation(fields: [programId], references: [id], onDelete: SetNull)
+  batchId           Int?               @map("batch_id")
+  batchRef          InternshipBatch?   @relation(fields: [batchId], references: [id], onDelete: SetNull)
+  internshipStage   String             @default("Applied") @map("internship_stage") // Applied, Selected, Onboarding, Training, Active, Completed, Certified
+
+  // Mentor-Intern relation
+  mentorId          Int?          @map("mentor_id")
+  mentor            User?         @relation("MentorToInterns", fields: [mentorId], references: [id], onDelete: SetNull)
+  interns           User[]        @relation("MentorToInterns")
+
+  // Relational links for other modules (to be added in later phases)
+  assignedTasks     Task[]        @relation("InternTasks")
+  createdTasks      Task[]        @relation("MentorTasks")
+  submissions       TaskSubmission[]
+  attendanceLogs    Attendance[]
+  quizAttempts      QuizAttempt[]
+  certificates      Certificate[]
+  comments          ForumComment[]
+  notifications     Notification[]
+  auditLogs         AuditLog[]
+
+  // Security Credentials
+  twoFactorSecret   String?       @map("two_factor_secret")
+  isTwoFactorActive Boolean       @default(false) @map("is_two_factor_active")
+
+  @@map("users")
+  @@index([createdAt], map: "idx_users_created_at")
+}
+
+model Category {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  courses Course[]
+
+  @@map("categories")
+}
+
+model Course {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String
+  categoryId  Int          @map("category_id")
+  thumbnail   String?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  category    Category     @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  enrollments Enrollment[]
+  lessons     Lesson[]
+  quizzes     Quiz[]
+  certificates Certificate[]
+
+  @@map("courses")
+  @@index([categoryId], map: "idx_courses_category_id")
+  @@index([createdAt], map: "idx_courses_created_at")
+}
+
+model Enrollment {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  courseId   Int      @map("course_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+  progress   Decimal  @default(0) @db.Decimal(5, 2)
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("enrollments")
+  @@unique([userId, courseId], map: "uq_enrollments_user_course")
+  @@index([courseId], map: "idx_enrollments_course_id")
+  @@index([userId], map: "idx_enrollments_user_id")
+}
+
+model Lesson {
+  id       Int    @id @default(autoincrement())
+  courseId Int    @map("course_id")
+  title    String
+  videoUrl String @map("video_url")
+  order    Int    @map("order")
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("lessons")
+  @@unique([courseId, order], map: "uq_lessons_course_order")
+  @@index([courseId], map: "idx_lessons_course_id")
+}
+
+enum Priority {
+  High
+  Medium
+  Low
+}
+
+model Announcement {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  priority    Priority @default(Medium)
+  pinned      Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("announcements")
+  @@index([createdAt], map: "idx_announcements_created_at")
+}
+
+model ForumThread {
+  id        Int            @id @default(autoincrement())
+  title     String
+  category  String         @default("Internship")
+  votes     Int            @default(0)
+  authorId  Int            @map("author_id")
+  author    User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments  ForumComment[]
+  createdAt DateTime       @default(now()) @map("created_at")
+
+  @@map("forum_threads")
+  @@index([createdAt], map: "idx_forum_threads_created_at")
+  @@index([authorId], map: "idx_forum_threads_author_id")
+}
+
+model Article {
+  id        Int      @id @default(autoincrement())
+  title     String
+  category  String   @default("General")
+  views     Int      @default(0)
+  helpful   Int      @default(0)
+  verified  Boolean  @default(false)
+  authorId  Int      @map("author_id")
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("articles")
+  @@index([createdAt], map: "idx_articles_created_at")
+}
+
+model Report {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String?   // Could be a URL or text
+  status    String   @default("Pending") // Pending, Reviewed
+  score     Decimal? @db.Decimal(4, 2)
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("reports")
+  @@index([createdAt], map: "idx_reports_created_at")
+  @@index([userId], map: "idx_reports_user_id")
+}
+
+// ── NEW PHASE 1 MODELS: Core & RBAC ────────────────────────────────────
+
+model Organization {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  description String?
+  departments Department[]
+  users       User[]
+  createdAt   DateTime     @default(now()) @map("created_at")
+
+  @@map("organizations")
+}
+
+model Department {
+  id             Int           @id @default(autoincrement())
+  name           String        @unique
+  code           String        @unique
+  organizationId Int?          @map("organization_id")
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users          User[]
+  createdAt      DateTime      @default(now()) @map("created_at")
+
+  @@map("departments")
+}
+
+model Role {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  description String?
+  permissions Permission[]
+  users       User[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  roles       Role[]
+
+  @@map("permissions")
+}
+
+// ── NEW PHASE 2 MODELS: Attendance & Task Management ───────────────────
+
+model Attendance {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date       DateTime  @db.Date
+  checkIn    DateTime  @map("check_in")
+  checkOut   DateTime? @map("check_out")
+  status     String    @default("Present")
+  location   String?   
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@map("attendance")
+  @@unique([userId, date], map: "uq_attendance_user_date")
+  @@index([userId], map: "idx_attendance_user_id")
+}
+
+model Task {
+  id           Int              @id @default(autoincrement())
+  title        String
+  description  String
+  dueDate      DateTime         @map("due_date")
+  priority     Priority         @default(Medium)
+  status       String           @default("Assigned")
+  assignedToId Int              @map("assigned_to_id")
+  assignedTo   User             @relation("InternTasks", fields: [assignedToId], references: [id], onDelete: Cascade)
+  createdById  Int              @map("created_by_id")
+  createdBy    User             @relation("MentorTasks", fields: [createdById], references: [id])
+  submissions  TaskSubmission[]
+  createdAt    DateTime         @default(now()) @map("created_at")
+
+  @@map("tasks")
+  @@index([assignedToId], map: "idx_tasks_assigned_to_id")
+}
+
+model TaskSubmission {
+  id          Int      @id @default(autoincrement())
+  taskId      Int      @map("task_id")
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  submitterId Int      @map("submitter_id")
+  submitter   User     @relation(fields: [submitterId], references: [id], onDelete: Cascade)
+  content     String   
+  status      String   @default("Pending")
+  score       Decimal? @db.Decimal(4, 2)
+  feedback    String?
+  submittedAt DateTime @default(now()) @map("submitted_at")
+
+  @@map("task_submissions")
+  @@index([taskId], map: "idx_task_submissions_task_id")
+  @@index([submitterId], map: "idx_task_submissions_submitter_id")
+}
+
+// ── NEW PHASE 3 MODELS: Learning & Certifications ─────────────────────
+
+model Quiz {
+  id        Int           @id @default(autoincrement())
+  courseId  Int           @map("course_id")
+  course    Course        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  title     String
+  questions QuizQuestion[]
+  attempts  QuizAttempt[]
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@map("quizzes")
+}
+
+model QuizQuestion {
+  id            Int      @id @default(autoincrement())
+  quizId        Int      @map("quiz_id")
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  questionText  String   @map("question_text")
+  options       String[] 
+  correctOption Int      @map("correct_option") 
+
+  @@map("quiz_questions")
+}
+
+model QuizAttempt {
+  id          Int      @id @default(autoincrement())
+  quizId      Int      @map("quiz_id")
+  quiz        Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score       Decimal  @db.Decimal(5, 2) 
+  passed      Boolean
+  attemptedAt DateTime @default(now()) @map("attempted_at")
+
+  @@map("quiz_attempts")
+  @@index([userId], map: "idx_quiz_attempts_user_id")
+}
+
+model Certificate {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @map("user_id")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId        Int      @map("course_id")
+  course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  issuedAt        DateTime @default(now()) @map("issued_at")
+  certificateHash String   @unique @map("certificate_hash") 
+  downloadUrl     String?  @map("download_url")
+
+  @@map("certificates")
+  @@unique([userId, courseId], map: "uq_certificates_user_course")
+  @@index([certificateHash], map: "idx_certificates_hash")
+}
+
+// ── NEW PHASE 4 MODELS: Forum Replies & Alerts ──────────────────────────
+
+model ForumComment {
+  id        Int      @id @default(autoincrement())
+  threadId  Int      @map("thread_id")
+  thread    ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId  Int      @map("author_id")
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("forum_comments")
+  @@index([threadId], map: "idx_forum_comments_thread_id")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("System") 
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+  @@index([userId], map: "idx_notifications_user_id")
+  @@index([isRead], map: "idx_notifications_is_read")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String   
+  details   String   
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}
+
+model InternshipProgram {
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  description String?
+  duration    Int               
+  batches     InternshipBatch[]
+  users       User[]
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  @@map("internship_programs")
+}
+
+model InternshipBatch {
+  id        Int               @id @default(autoincrement())
+  name      String            @unique
+  startDate DateTime          @map("start_date")
+  endDate   DateTime          @map("end_date")
+  programId Int               @map("program_id")
+  program   InternshipProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  users     User[]
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  @@map("internship_batches")
+}
