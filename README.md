@@ -115,7 +115,7 @@ erDiagram
 
 Create `.env` files in the respective project directories:
 
-### Backend Configuration (`SkillnovaDBbyMayank/.env`)
+### Backend Configuration (`backend/.env`)
 ```env
 # Database connection string
 DATABASE_URL="postgresql://username:password@localhost:5432/py_nexus?schema=public"
@@ -131,7 +131,7 @@ NODE_ENV="development"
 GEMINI_API_KEY="AIzaSyYourGeminiApiKeyHere"
 ```
 
-### Frontend Configuration (`skillnova/skillnova/.env`)
+### Frontend Configuration (`frontend/.env`)
 ```env
 # Target endpoint pointing to the backend API Server
 VITE_API_URL="http://localhost:5000/api"
@@ -229,8 +229,17 @@ Here is a preview of the platform in action:
 
 ## 👥 Contributors
 
-* **Mayank** - Lead Database Architect & Frontend Developer
-* **Antigravity AI** - System Architect & Security Lead
+**Pradeep Yadav**  
+*Full Stack Developer*
+
+### Responsibilities:
+* System Architecture
+* React Frontend Development
+* Express Backend Development
+* PostgreSQL Database Design
+* Prisma ORM Integration
+* Authentication & Security
+* AI Integration
 
 ---
 
