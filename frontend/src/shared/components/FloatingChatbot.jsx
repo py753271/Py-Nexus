@@ -1,39 +1,119 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
+import { MessageCircle, X, Send, Bot, Sparkles, AlertCircle, RefreshCw, Cpu, Zap, Info } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import api from "../../utils/api";
 import { useUser } from "../../context/UserContext";
 
 const STUDENT_SUGGESTIONS = [
-  { text: "My active courses?", query: "what are my active courses?" },
-  { text: "Latest announcements?", query: "summarize latest announcements" },
-  { text: "How to submit a report?", query: "how do i submit a report?" },
-  { text: "System status?", query: "system status" },
+  { text: "My active courses?", query: "what are my active courses?", icon: "📖" },
+  { text: "Latest announcements?", query: "summarize latest announcements", icon: "📢" },
+  { text: "How to submit a report?", query: "how do i submit a report?", icon: "📝" },
+  { text: "Who is my mentor?", query: "who is my mentor?", icon: "👤" },
+];
+
+const MENTOR_SUGGESTIONS = [
+  { text: "Review submissions?", query: "pending submissions", icon: "📑" },
+  { text: "My assigned interns?", query: "my interns", icon: "👥" },
+  { text: "How to issue a task?", query: "how do i issue a task?", icon: "🔧" },
+  { text: "Mentor guidelines?", query: "mentor guidelines", icon: "📋" },
 ];
 
 const ADMIN_SUGGESTIONS = [
-  { text: "Global system stats?", query: "stats" },
-  { text: "Pending audit reports?", query: "my reports" },
-  { text: "Available courses?", query: "what courses are available?" },
-  { text: "Who am I?", query: "who am i?" },
+  { text: "Global system stats?", query: "stats", icon: "📊" },
+  { text: "Available courses?", query: "what courses are available?", icon: "🎓" },
+  { text: "View departments?", query: "list departments", icon: "🏢" },
+  { text: "List active interns?", query: "list active interns", icon: "👥" },
+];
+
+const SUPER_ADMIN_SUGGESTIONS = [
+  { text: "View system audit logs?", query: "audit logs", icon: "📜" },
+  { text: "List role permissions?", query: "list role permissions", icon: "🔑" },
+  { text: "Organization settings?", query: "organization settings", icon: "⚙️" },
+  { text: "Database stats?", query: "database stats", icon: "💾" },
 ];
 
 const FloatingChatbot = () => {
   const { user } = useUser();
-  const isAdmin = user?.role === "ADMIN";
-  const suggestions = isAdmin ? ADMIN_SUGGESTIONS : STUDENT_SUGGESTIONS;
+
+  const getSuggestions = () => {
+    if (!user) return STUDENT_SUGGESTIONS;
+    if (user.role === "ADMIN") {
+      const email = user.email || "";
+      if (email.toLowerCase().includes("superadmin")) {
+        return SUPER_ADMIN_SUGGESTIONS;
+      }
+      return ADMIN_SUGGESTIONS;
+    }
+    if (user.role === "INSTRUCTOR") {
+      return MENTOR_SUGGESTIONS;
+    }
+    return STUDENT_SUGGESTIONS;
+  };
+
+  const suggestions = getSuggestions();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
+  const [isAiConfigured, setIsAiConfigured] = useState(true);
+  const [showBanner, setShowBanner] = useState(true);
+  
+  const getWelcomeText = (currentUser) => {
+    if (!currentUser) return "Hello, there! 🖐️ I'm the Py Nexus AI Assistant. How can I help you clear your doubts today?";
+    
+    if (currentUser.role === "ADMIN") {
+      const email = currentUser.email || "";
+      if (email.toLowerCase().includes("superadmin")) {
+        return `Hello, Super Admin! 🖐️ I'm the Py Nexus Root Assistant. Ready to review system configurations, audit logs, or database status?`;
+      }
+      return `Hello, Admin! 🖐️ I'm the Py Nexus Management Assistant. Ready to help you review statistics or manage course systems?`;
+    }
+    
+    if (currentUser.role === "INSTRUCTOR") {
+      return `Hello, Coach ${currentUser.name}! 🖐️ I'm the Py Nexus Instructor Assistant. Ready to check intern submissions or task guidelines?`;
+    }
+    
+    return `Hello, ${currentUser.name}! 🖐️ I'm the Py Nexus Learning Assistant. How can I help you with your courses, tasks, or daily reports today?`;
+  };
+
+  const [messages, setMessages] = useState(() => [
     {
       id: "init",
       sender: "bot",
-      text: "Hello! 🖐️ I'm your Py Nexus Assistant. How can I help you clear your doubts today?",
+      text: getWelcomeText(user),
+      timestamp: new Date(),
     },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const messagesEndRef = useRef(null);
+
+  // Sync welcome message on login / user object retrieval
+  useEffect(() => {
+    setMessages([
+      {
+        id: "init",
+        sender: "bot",
+        text: getWelcomeText(user),
+        timestamp: new Date(),
+      },
+    ]);
+  }, [user]);
+
+  useEffect(() => {
+    const checkAiStatus = async () => {
+      try {
+        const res = await api.get("/ai/status");
+        if (res.data.success) {
+          setIsAiConfigured(res.data.isConfigured);
+        }
+      } catch (err) {
+        console.error("[AI Status Check Failed]", err);
+      }
+    };
+    if (user) {
+      checkAiStatus();
+    }
+  }, [user]);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -47,7 +127,12 @@ const FloatingChatbot = () => {
 
     setError("");
     setInput("");
-    const userMessage = { id: Date.now().toString(), sender: "user", text: query };
+    const userMessage = { 
+      id: Date.now().toString(), 
+      sender: "user", 
+      text: query,
+      timestamp: new Date()
+    };
     setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
 
@@ -58,20 +143,52 @@ const FloatingChatbot = () => {
           id: (Date.now() + 1).toString(),
           sender: "bot",
           text: res.data.text,
+          timestamp: new Date()
         };
         setMessages((prev) => [...prev, botMessage]);
+        
+        if (res.data.text.includes("[Neural Engine Offline Mode]")) {
+          setIsAiConfigured(false);
+        }
       }
     } catch (err) {
-      setError("Failed to connect to assistant. Make sure backend is running.");
+      setError("Failed to connect to assistant.");
       const errorMessage = {
         id: (Date.now() + 1).toString(),
         sender: "bot",
-        text: "⚠️ System offline. I couldn't reach the AI engine right now. Please try again in a bit.",
+        text: "⚠️ System offline. I couldn't reach the AI engine right now. Please check your backend connection.",
+        timestamp: new Date()
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClearChat = () => {
+    let welcomeText = `Chat cleared. Ask me anything about your courses, tasks, or guidelines!`;
+    if (user) {
+      if (user.role === "ADMIN") {
+        const email = user.email || "";
+        if (email.toLowerCase().includes("superadmin")) {
+          welcomeText = `Console cleared. Ask me about system configurations, logs, or databases!`;
+        } else {
+          welcomeText = `Dashboard chat cleared. Ask me about courses, interns, or platform statistics!`;
+        }
+      } else if (user.role === "INSTRUCTOR") {
+        welcomeText = `Mentor room cleared. Ask me about student grades, submissions, or task mappings!`;
+      } else {
+        welcomeText = `Learning space cleared. Ask me anything about your courses, tasks, or guidelines!`;
+      }
+    }
+    setMessages([
+      {
+        id: "init",
+        sender: "bot",
+        text: welcomeText,
+        timestamp: new Date(),
+      },
+    ]);
   };
 
   const handleKeyPress = (e) => {
@@ -81,118 +198,206 @@ const FloatingChatbot = () => {
     }
   };
 
+  const cleanMessageText = (text) => {
+    return text.replace(/\[Neural Engine Offline Mode\]\s*/i, "");
+  };
+
+  const isOfflineMessage = (text) => {
+    return text.includes("[Neural Engine Offline Mode]");
+  };
+
   return (
     <>
       {/* Floating Trigger Icon */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 p-4 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-xl shadow-orange-500/30 hover:scale-110 active:scale-95 transition-all duration-300 flex items-center justify-center"
-        aria-label="Toggle chat helper"
-      >
-        {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
-        {/* Subtle active ping */}
-        {!isOpen && (
-          <span className="absolute top-0 right-0 flex h-3.5 w-3.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-emerald-500 border-2 border-white dark:border-slate-900"></span>
-          </span>
-        )}
-      </button>
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className={`p-4 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center relative ${
+            isOpen 
+              ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900" 
+              : "bg-gradient-to-tr from-orange-500 via-amber-500 to-orange-600 text-white hover:shadow-orange-500/25"
+          }`}
+          aria-label="Toggle chat assistant"
+        >
+          {isOpen ? <X size={24} /> : <MessageCircle size={24} />}
+          
+          {!isOpen && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isAiConfigured ? "bg-emerald-400" : "bg-amber-400"}`}></span>
+              <span className={`relative inline-flex rounded-full h-4 w-4 border-2 border-slate-50 dark:border-slate-900 ${isAiConfigured ? "bg-emerald-500" : "bg-amber-500"}`}></span>
+            </span>
+          )}
+        </button>
+      </div>
 
       {/* Chat Window */}
-      {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-2rem)] h-[480px] bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300 select-none">
-          {/* Header */}
-          <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-gradient-to-r from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-orange-500 rounded-xl text-white">
-                <Bot size={18} />
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 30, scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            className="fixed sm:bottom-24 sm:right-6 bottom-20 right-4 z-50 w-[calc(100vw-2rem)] sm:w-96 h-[500px] sm:h-[550px] bg-slate-900/95 dark:bg-slate-950/98 backdrop-blur-xl rounded-[28px] border border-slate-800 shadow-2xl flex flex-col overflow-hidden text-white font-sans"
+          >
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-slate-800/60 flex items-center justify-between bg-slate-950/50 backdrop-blur-md flex-shrink-0 z-10">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-gradient-to-tr from-orange-500 to-amber-500 rounded-2xl shadow-lg shadow-orange-500/20 text-white flex items-center justify-center">
+                  <Bot size={20} />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
+                    Py Nexus AI
+                    {isAiConfigured ? (
+                      <span className="flex items-center gap-1 text-[10px] font-medium bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        <Zap size={10} className="fill-emerald-400" /> Neural
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-[10px] font-medium bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20">
+                        <Cpu size={10} /> Local
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                    <span className={`h-1.5 w-1.5 rounded-full ${isAiConfigured ? "bg-emerald-500 animate-pulse" : "bg-amber-500 animate-pulse"}`} />
+                    {isAiConfigured ? "Gemini 1.5 Flash Connected" : "Local Assistant Active"}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-sm font-black text-slate-950 dark:text-white leading-tight">Py Nexus Assistant</h4>
-                <p className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest leading-none mt-1">Online & Ready</p>
+              
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={handleClearChat}
+                  title="Clear conversation"
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+                >
+                  <RefreshCw size={14} />
+                </button>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+                >
+                  <X size={16} />
+                </button>
               </div>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
-            >
-              <X size={16} />
-            </button>
-          </div>
 
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/50 dark:bg-slate-900/50">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex gap-2.5 max-w-[85%] ${msg.sender === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
-              >
-                {msg.sender === "bot" && (
-                  <div className="w-7 h-7 rounded-lg bg-orange-500 text-white flex items-center justify-center flex-shrink-0">
-                    <Sparkles size={13} />
-                  </div>
-                )}
-                <div
-                  className={`px-4 py-3 rounded-2xl text-xs leading-relaxed ${
-                    msg.sender === "user"
-                      ? "bg-orange-500 text-white font-semibold rounded-tr-none"
-                      : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-100 dark:border-slate-700/50 rounded-tl-none shadow-sm"
-                  }`}
+            {/* Warning Banner if Offline */}
+            {!isAiConfigured && showBanner && (
+              <div className="px-4 py-2.5 bg-amber-500/15 border-b border-amber-500/20 text-amber-300 text-[11px] font-medium flex items-start gap-2.5 relative leading-relaxed flex-shrink-0 animate-in slide-in-from-top duration-300 z-10 bg-slate-900">
+                <Info size={14} className="mt-0.5 flex-shrink-0 text-amber-400" />
+                <div className="pr-4">
+                  <strong className="text-amber-200">Neural Engine Offline:</strong> Gemini AI key is not configured. Ask about courses or reports, or set <code className="bg-amber-950/60 px-1 py-0.5 rounded text-[10px] border border-amber-500/20 text-amber-400">GEMINI_API_KEY</code> in <code className="bg-amber-950/60 px-1 py-0.5 rounded text-[10px] border border-amber-500/20 text-amber-400">backend/.env</code>.
+                </div>
+                <button 
+                  onClick={() => setShowBanner(false)}
+                  className="absolute right-2 top-2 text-amber-400 hover:text-amber-200 transition-colors"
                 >
-                  <p className="whitespace-pre-line">{msg.text}</p>
-                </div>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex gap-2.5 max-w-[85%] mr-auto">
-                <div className="w-7 h-7 rounded-lg bg-orange-500 text-white flex items-center justify-center flex-shrink-0 animate-pulse">
-                  <Bot size={13} />
-                </div>
-                <div className="px-4 py-3 bg-white dark:bg-slate-800 rounded-2xl rounded-tl-none border border-slate-100 dark:border-slate-700/50 shadow-sm flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce" style={{ animationDelay: "0ms" }} />
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce" style={{ animationDelay: "150ms" }} />
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce" style={{ animationDelay: "300ms" }} />
-                </div>
+                  <X size={12} />
+                </button>
               </div>
             )}
-            <div ref={messagesEndRef} />
-          </div>
 
-          {/* Suggestions */}
-          {messages.length <= 2 && (
-            <div className="px-4 py-2 border-t border-slate-100 dark:border-slate-800 flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-none flex-shrink-0 bg-white dark:bg-slate-900">
-              {suggestions.map((s, i) => (
-                <button
-                  key={i}
-                  onClick={() => handleSend(s.query)}
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-400 hover:border-orange-500/50 hover:text-orange-500 transition-all bg-white dark:bg-slate-900 flex-shrink-0"
-                >
-                  {s.text}
-                </button>
-              ))}
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+              {messages.map((msg) => {
+                const isBot = msg.sender === "bot";
+                const isOffline = isBot && isOfflineMessage(msg.text);
+                const textContent = isBot ? cleanMessageText(msg.text) : msg.text;
+
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex gap-3 max-w-[85%] ${msg.sender === "user" ? "ml-auto flex-row-reverse" : "mr-auto"}`}
+                  >
+                    {isBot && (
+                      <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700/50 flex items-center justify-center flex-shrink-0 text-orange-400 shadow-inner">
+                        <Sparkles size={14} />
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-1">
+                      <div
+                        className={`px-4 py-3 rounded-2xl text-xs leading-relaxed shadow-lg ${
+                          msg.sender === "user"
+                            ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white font-medium rounded-tr-none shadow-orange-500/10"
+                            : isOffline
+                            ? "bg-slate-800/80 border border-amber-500/20 text-slate-200 rounded-tl-none"
+                            : "bg-slate-800/80 border border-slate-800/80 text-slate-200 rounded-tl-none"
+                        }`}
+                      >
+                        <p className="whitespace-pre-line">{textContent}</p>
+                        
+                        {isOffline && (
+                          <div className="mt-3 pt-2.5 border-t border-amber-500/10 flex items-start gap-2 text-[10px] text-amber-400/90 font-medium animate-pulse">
+                            <AlertCircle size={12} className="flex-shrink-0 mt-0.5" />
+                            <span>System responded via local rule-engine fallback.</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className={`text-[9px] text-slate-500 font-medium px-1 ${msg.sender === "user" ? "text-right" : ""}`}>
+                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {loading && (
+                <div className="flex gap-3 max-w-[85%] mr-auto">
+                  <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700/50 flex items-center justify-center flex-shrink-0 text-orange-400 animate-pulse">
+                    <Bot size={14} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <div className="px-4 py-3 bg-slate-800/80 border border-slate-800/80 rounded-2xl rounded-tl-none shadow-lg flex items-center gap-1.5 h-9">
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
             </div>
-          )}
 
-          {/* Input Bar */}
-          <div className="p-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 flex-shrink-0 flex items-center gap-2">
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyPress}
-              placeholder="Type your question..."
-              className="flex-1 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 outline-none text-xs font-semibold text-slate-900 dark:text-white placeholder-slate-400 focus:border-orange-500/50 transition-all"
-            />
-            <button
-              onClick={() => handleSend(input)}
-              disabled={loading || !input.trim()}
-              className="p-3 rounded-xl bg-orange-500 text-white disabled:opacity-40 hover:bg-orange-600 active:scale-95 transition-all shadow-md shadow-orange-500/20"
-            >
-              <Send size={15} />
-            </button>
-          </div>
-        </div>
-      )}
+            {/* Suggestions Chips */}
+            {suggestions.length > 0 && (
+              <div className="px-4 py-2.5 border-t border-slate-800/50 bg-slate-950/20 flex gap-2 overflow-x-auto whitespace-nowrap scrollbar-none flex-shrink-0">
+                {suggestions.map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSend(s.query)}
+                    className="px-3.5 py-2 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800 hover:border-orange-500/40 text-[10px] font-bold text-slate-300 hover:text-white transition-all duration-300 flex items-center gap-1.5 shadow-sm active:scale-95"
+                  >
+                    <span>{s.icon}</span>
+                    <span>{s.text}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Input Bar */}
+            <div className="p-4 border-t border-slate-800/50 bg-slate-950/45 flex-shrink-0 flex items-center gap-2">
+              <div className="flex-1 relative flex items-center">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  placeholder="Type your question..."
+                  className="w-full pl-4 pr-10 py-3.5 rounded-2xl bg-slate-800/50 border border-slate-800 focus:border-orange-500/40 outline-none text-xs font-semibold text-white placeholder-slate-500 transition-all duration-300"
+                />
+                <button
+                  onClick={() => handleSend(input)}
+                  disabled={loading || !input.trim()}
+                  className="absolute right-2 p-2 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white disabled:opacity-30 hover:scale-105 active:scale-95 transition-all duration-200 shadow-md shadow-orange-500/20 disabled:pointer-events-none"
+                >
+                  <Send size={14} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };

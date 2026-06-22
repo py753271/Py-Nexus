@@ -39,10 +39,10 @@ const notificationRoutes = require('./routes/notification');
 
 const app = express();
 
-// Rate Limiting
+// Rate Limiter configuration with development environment bypass
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per window
+    max: process.env.NODE_ENV === 'development' ? 10000 : 100, // Higher threshold for local development
     message: { success: false, message: 'Too many requests from this IP, please try again after 15 minutes.' },
     standardHeaders: true,
     legacyHeaders: false,
@@ -50,7 +50,7 @@ const globalLimiter = rateLimit({
 
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 30, // Limit each IP to 30 authentication requests per window
+    max: process.env.NODE_ENV === 'development' ? 1000 : 30, // Higher threshold for authentication in development
     message: { success: false, message: 'Too many login attempts, please try again after 15 minutes.' },
     standardHeaders: true,
     legacyHeaders: false,

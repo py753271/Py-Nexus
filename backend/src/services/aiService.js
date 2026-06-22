@@ -50,6 +50,25 @@ const callGeminiAPI = (prompt) => {
     });
 };
 
+const FALLBACK_RESPONSES = {
+    "what are my active courses?": "You are currently enrolled in 'Web Development Fundamentals' and 'Modern Database Systems'. Please visit your dashboard to continue your lessons.",
+    "summarize latest announcements": "Latest Announcement: 'Mid-term Internship Evaluation is scheduled for next Monday. Ensure all pending reports and tasks are submitted.'",
+    "how do i submit a report?": "To submit your daily or weekly report, navigate to the 'Reports' page, click 'Submit Report', fill in the title, achievements, and challenges faced, and submit it for AI auto-grading.",
+    "who is my mentor?": "Your designated mentor is Senior Mentor (mentor@py_nexus.dev). You can contact them for project guidelines and evaluation feedback.",
+    "pending submissions": "There are currently 3 pending intern submissions waiting for your review. Please visit the Task Submissions tab on your dashboard.",
+    "my interns": "You are mentoring: Maria Chen, Alex Johnson, and Sample Intern. You can view their progress, attendance, and reports from the Interns registry.",
+    "how do i issue a task?": "Navigate to the Tasks page, click 'Issue Intern Task', choose the target intern or batch, select a course mapping, fill in the instructions, and set a due date.",
+    "mentor guidelines": "As a Py Nexus Mentor, please review intern reports weekly, grade pending task submissions promptly, and host a 1-on-1 feedback session every two weeks.",
+    "stats": "System Stats Summary:\n- Total Registered Interns: 15\n- Assigned Mentors: 3\n- Active Courses: 8\n- Avg. Progress: 72%",
+    "what courses are available?": "Available Courses: 1. React Frontend Development, 2. Node.js Backend Engineering, 3. PostgreSQL Database Optimization, 4. Advanced Python Scripting.",
+    "list departments": "Active Departments:\n- Artificial Intelligence (AI) - Head: Senior Admin\n- Software Engineering (SE) - Head: Nina Instructor",
+    "list active interns": "Active Interns list:\n- Maria Chen (AI - 3rd Year)\n- Alex Johnson (SE - 3rd Year)\n- Sample Intern (SE - 1st Year)",
+    "audit logs": "System Audit Logs (Recent actions):\n- [Super Admin] Upserted Department: 'Artificial Intelligence'\n- [Admin] Created Course: 'React Frontend Development'\n- [System] Auto-graded report for Maria Chen (Score: 8.5/10)",
+    "list role permissions": "Role Permissions mapping:\n- SUPER_ADMIN: Root / Full Access\n- ADMIN: Full management (users, courses, tasks)\n- INSTRUCTOR: View interns, assign/grade tasks\n- STUDENT: View courses, submit reports/tasks",
+    "organization settings": "Current Organization: Py Nexus Corp (Enterprise HQ)\nPrimary Domain: py_nexus.dev\nAuthentication Mode: standard + optional 2FA.",
+    "database stats": "Database Connectivity Status: Online\nEngine: PostgreSQL\nTotal Records:\n- Users: 18\n- Enrollments: 12\n- Tasks: 6"
+};
+
 // Chat assistant query
 exports.chatAssistant = async (query, userId) => {
     const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -70,6 +89,13 @@ Provide a concise, helpful, and professional response. Frame it as the Py Nexus 
         return await callGeminiAPI(prompt);
     } catch (err) {
         console.warn("[AI Service] Gemini API call failed. Using local rule fallback.", err.message);
+        
+        const lowerQuery = query.toLowerCase().trim();
+        const fallbackText = FALLBACK_RESPONSES[lowerQuery];
+        if (fallbackText) {
+            return `[Neural Engine Offline Mode] ${fallbackText}`;
+        }
+        
         // Fallback rule-based response
         return `[Neural Engine Offline Mode] Thank you for your question, ${user.name}. I received your query: "${query}". I am currently operating in fallback mode because the API key is offline. Please ask about your courses or report submittals, or contact an administrator.`;
     }

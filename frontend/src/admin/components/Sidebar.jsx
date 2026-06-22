@@ -1,7 +1,3 @@
-// ══════════════════════════════════════════════
-//  ADMIN — Sidebar.jsx  (Command Tower Design)
-// ══════════════════════════════════════════════
-
 import React, { useState } from "react";
 import {
   LayoutDashboard, Users, BookOpen, FileText,
@@ -9,6 +5,7 @@ import {
   ChevronRight, ChevronLeft, LogOut, Activity,
   Cpu, User, ClipboardList
 } from "lucide-react";
+import { useUser } from "../../context/UserContext";
 
 const ADMIN_MENU = [
   { id: "admin-dashboard",      label: "Command Center",    icon: LayoutDashboard },
@@ -25,31 +22,38 @@ const ADMIN_MENU = [
 
 const Sidebar = ({ active, onNavigate, onLogout }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const { user } = useUser();
+  const isSuperAdmin = user?.email?.toLowerCase().includes("superadmin");
 
-  // FORCE DARK THEME COLORS FOR ADMIN CONSOLE
-  const THEME = {
-    bg: "#020617",
-    border: "rgba(255,109,52,0.1)",
-    text: "#94a3b8",
-    active: "#f97316",
-    activeBg: "rgba(255,109,52,0.1)",
-    hover: "#ffffff"
-  };
+  const filteredMenu = ADMIN_MENU.filter(item => {
+    if (isSuperAdmin) return true;
+    // Standard Admins/Teachers cannot manage system users or global preferences
+    if (item.id === "admin-users" || item.id === "admin-settings") {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <aside
-      className={`h-screen flex flex-col transition-all duration-500 flex-shrink-0 z-50 sticky top-0 shadow-[20px_0_40px_-15px_rgba(0,0,0,0.5)] ${collapsed ? "w-20" : "w-72"}`}
-      style={{ background: THEME.bg, borderRight: `1px solid ${THEME.border}` }}
+      className={`h-screen flex flex-col transition-all duration-500 flex-shrink-0 z-50 sticky top-0 shadow-lg ${collapsed ? "w-20" : "w-72"}`}
+      style={{ background: 'var(--card)', borderRight: '1px solid var(--border)' }}
     >
       {/* Admin Branding */}
       <div className="h-24 flex flex-col justify-center px-6 flex-shrink-0 relative overflow-hidden"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        style={{ borderBottom: '1px solid var(--border)' }}>
         
         <div className="flex items-center justify-between z-10">
           {!collapsed ? (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-1">
                <img src="/logo.png" alt="Py Nexus Logo" className="h-11 w-auto object-contain" />
-               <span className="text-[9px] font-black tracking-[0.2em] text-orange-500 uppercase px-2 py-1 bg-orange-500/10 border border-orange-500/20 rounded-md">ADMIN</span>
+               <span className={`text-[8px] font-black tracking-[0.2em] uppercase px-2 py-0.5 rounded-md border text-center ${
+                 isSuperAdmin 
+                   ? "bg-purple-500/15 border-purple-500/30 text-purple-400" 
+                   : "bg-orange-500/15 border-orange-500/30 text-orange-400"
+               }`}>
+                 {isSuperAdmin ? "SUPER ADMIN" : "ADMIN / TEACHER"}
+               </span>
             </div>
           ) : (
             <div className="flex items-center justify-center mx-auto">
@@ -60,7 +64,7 @@ const Sidebar = ({ active, onNavigate, onLogout }) => {
           {!collapsed && (
             <button
               onClick={() => setCollapsed(true)}
-              className="p-1.5 rounded-lg transition-all active:scale-90 hover:bg-white/5 text-slate-500"
+              className="p-1.5 rounded-lg transition-all active:scale-90 hover:bg-slate-100 dark:hover:bg-slate-800/40 text-slate-500"
             >
               <ChevronLeft size={16} />
             </button>
@@ -74,7 +78,7 @@ const Sidebar = ({ active, onNavigate, onLogout }) => {
         <div className="flex justify-center py-4">
            <button
             onClick={() => setCollapsed(false)}
-            className="p-1.5 rounded-lg transition-all active:scale-90 hover:bg-white/5 text-slate-500"
+            className="p-1.5 rounded-lg transition-all active:scale-90 hover:bg-slate-100 dark:hover:bg-slate-800/40 text-slate-500"
           >
             <ChevronRight size={16} />
           </button>
@@ -83,7 +87,7 @@ const Sidebar = ({ active, onNavigate, onLogout }) => {
 
       {/* Navigation Links */}
       <nav className="flex-1 overflow-y-auto py-8 px-4 space-y-1">
-        {ADMIN_MENU.map(item => {
+        {filteredMenu.map(item => {
           const Icon = item.icon;
           const isActive = active === item.id;
           return (
@@ -92,18 +96,30 @@ const Sidebar = ({ active, onNavigate, onLogout }) => {
               onClick={() => onNavigate(item.id)}
               className={`w-full group flex items-center gap-4 px-4 py-4 rounded-xl text-sm font-bold transition-all relative overflow-hidden active:scale-95`}
               style={{
-                background: isActive ? THEME.activeBg : 'transparent',
-                color: isActive ? THEME.active : THEME.text,
+                background: isActive ? 'rgba(255,109,52,0.1)' : 'transparent',
+                color: isActive ? '#f97316' : 'var(--muted)',
+              }}
+              onMouseEnter={e => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'var(--background)';
+                  e.currentTarget.style.color = '#f97316';
+                }
+              }}
+              onMouseLeave={e => {
+                if (!isActive) {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = 'var(--muted)';
+                }
               }}
             >
               <Icon 
                 size={18} 
-                className={`flex-shrink-0 transition-all duration-500 ${isActive ? 'scale-110 text-orange-500' : 'group-hover:text-white'}`} 
+                className={`flex-shrink-0 transition-all duration-500 ${isActive ? 'scale-110 text-orange-500' : 'group-hover:text-orange-500'}`} 
                 strokeWidth={isActive ? 2.5 : 2} 
               />
 
               {!collapsed && (
-                <span className={`truncate tracking-wide transition-all duration-300 ${isActive ? 'translate-x-1' : 'group-hover:translate-x-1 group-hover:text-white'}`}>
+                <span className={`truncate tracking-wide transition-all duration-300 ${isActive ? 'translate-x-1' : 'group-hover:translate-x-1'}`}>
                   {item.label}
                 </span>
               )}
@@ -116,7 +132,7 @@ const Sidebar = ({ active, onNavigate, onLogout }) => {
         })}
       </nav>
 
-      <div className="p-6 space-y-4" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="p-6 space-y-4" style={{ borderTop: '1px solid var(--border)' }}>
         {!collapsed && (
            <div className="px-4 py-3 rounded-xl flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20">
                <Activity size={14} className="text-emerald-500 animate-pulse" />

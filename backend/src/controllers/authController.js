@@ -60,6 +60,7 @@ exports.register = asyncWrapper(async (req, res) => {
 
 exports.login = asyncWrapper(async (req, res) => {
     const { email, password } = req.body;
+    console.log("[Auth Login Attempt] email:", email, "password:", password);
 
     if (!email || !password) {
         return res.status(400).json({ success: false, message: 'Please provide email and password' });

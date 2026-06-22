@@ -7,6 +7,7 @@
     "prisma:generate": "prisma generate --schema=../prisma/schema.prisma",
     "prisma:migrate": "prisma migrate dev --schema=../prisma/schema.prisma",
     "prisma:seed": "prisma db seed --schema=../prisma/schema.prisma",
+    "build": "prisma generate --schema=../prisma/schema.prisma",
     "dev": "node src/server.js",
     "start": "node src/server.js"
   },

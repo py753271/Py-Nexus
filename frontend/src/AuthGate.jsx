@@ -100,10 +100,9 @@ const AuthGate = () => {
     );
   }
 
-  // If user is already in session and portal check passes
+  // If user is already in session, route them strictly by role
   if (user) {
     const isActuallyAdmin = user.role === 'ADMIN';
-    const currentPortal = authPortal || (isActuallyAdmin ? 'admin' : 'intern');
     
     // Clear portal storage on logout
     const handleLogout = () => {
@@ -111,7 +110,7 @@ const AuthGate = () => {
       logout();
     };
 
-    return currentPortal === "admin" && isActuallyAdmin
+    return isActuallyAdmin
       ? <AdminApp onLogout={handleLogout} user={user} /> 
       : <UserApp  onLogout={handleLogout} user={user} />;
   }
@@ -266,6 +265,63 @@ const AuthGate = () => {
                       Back
                     </button>
                   </div>
+
+                  {!isSignUp && (
+                    <div className="mt-6 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/10 text-xs">
+                      <p className="font-bold text-slate-700 dark:text-slate-300 mb-2">💡 Quick Demo Access:</p>
+                      {authPortal === "admin" ? (
+                        <div className="space-y-1.5">
+                          <button 
+                            type="button"
+                            onClick={() => { setEmail("admin@py_nexus.dev"); setPassword("admin123"); }}
+                            className="w-full text-left py-1.5 px-2 rounded-xl hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors flex items-center justify-between text-slate-600 dark:text-slate-400 font-mono text-[11px]"
+                          >
+                            <div>
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">admin@py_nexus.dev</span>
+                              <span className="text-[10px] text-slate-400 block">Password: admin123 (Admin)</span>
+                            </div>
+                            <span className="bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded text-[9px] font-bold font-sans">Autofill</span>
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => { setEmail("superadmin@py_nexus.dev"); setPassword("superadmin123"); }}
+                            className="w-full text-left py-1.5 px-2 rounded-xl hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors flex items-center justify-between text-slate-600 dark:text-slate-400 font-mono text-[11px]"
+                          >
+                            <div>
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">superadmin@py_nexus.dev</span>
+                              <span className="text-[10px] text-slate-400 block">Password: superadmin123 (Super Admin)</span>
+                            </div>
+                            <span className="bg-orange-500/10 text-orange-500 px-1.5 py-0.5 rounded text-[9px] font-bold font-sans">Autofill</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="space-y-1.5">
+                          <button 
+                            type="button"
+                            onClick={() => { setEmail("maria@student.dev"); setPassword("student123"); }}
+                            className="w-full text-left py-1.5 px-2 rounded-xl hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors flex items-center justify-between text-slate-600 dark:text-slate-400 font-mono text-[11px]"
+                          >
+                            <div>
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">maria@student.dev</span>
+                              <span className="text-[10px] text-slate-400 block">Password: student123 (Student)</span>
+                            </div>
+                            <span className="bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded text-[9px] font-bold font-sans">Autofill</span>
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => { setEmail("intern@py_nexus.dev"); setPassword("intern123"); }}
+                            className="w-full text-left py-1.5 px-2 rounded-xl hover:bg-slate-200/50 dark:hover:bg-slate-800/40 transition-colors flex items-center justify-between text-slate-600 dark:text-slate-400 font-mono text-[11px]"
+                          >
+                            <div>
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">intern@py_nexus.dev</span>
+                              <span className="text-[10px] text-slate-400 block">Password: intern123 (Intern)</span>
+                            </div>
+                            <span className="bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded text-[9px] font-bold font-sans">Autofill</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>

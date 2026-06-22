@@ -1,6 +1,6 @@
 Add-Type -AssemblyName System.Drawing
 
-$imgPath = "d:\internship\project\project\skillnova\skillnova\public\logo.png.bak"
+$imgPath = "$PSScriptRoot/public/logo.png.bak"
 if (-not (Test-Path $imgPath)) {
     Write-Host "Error: logo.png.bak not found at $imgPath"
     exit 1

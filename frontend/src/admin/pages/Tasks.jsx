@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { 
   ClipboardList, Plus, Clock, CheckCircle, 
-  Send, ExternalLink, RefreshCw, Star, X, Edit3, User
+  Send, ExternalLink, RefreshCw, Star, X, Edit3, User, Calendar
 } from "lucide-react";
 import { Card, Badge, SectionHeader } from "../../shared/components/UI";
 import api from "../../utils/api";
 
 const Tasks = () => {
+  const todayStr = new Date().toISOString().split('T')[0];
   const [tasks, setTasks] = useState([]);
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -274,56 +275,54 @@ const Tasks = () => {
 
       {/* TASK ASSIGNMENT MODAL */}
       {showAssignModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
-          <Card className="w-full max-w-lg p-8 relative overflow-hidden" style={{ background: '#0f172a', borderColor: 'rgba(255,109,52,0.1)' }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="w-full max-w-lg p-8 relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[24px] shadow-2xl flex flex-col text-slate-800 dark:text-white">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-amber-500" />
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-black tracking-tight text-white">Issue Intern Task</h3>
-              <button onClick={() => setShowAssignModal(false)} className="text-slate-400 hover:text-white transition-colors">
+              <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Issue Intern Task</h3>
+              <button onClick={() => setShowAssignModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
                 <X size={24} />
               </button>
             </div>
             
             <form onSubmit={handleAssignTask} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Task Title</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Task Title</label>
                 <input
                   type="text"
                   required
                   value={assignForm.title}
                   onChange={e => setAssignForm({ ...assignForm, title: e.target.value })}
                   placeholder="e.g. Implement JWT Verification Middleware"
-                  className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none border focus:border-orange-500"
-                  style={{ background: '#020617', borderColor: 'rgba(255,255,255,0.08)', color: '#ffffff' }}
+                  className="w-full px-4 py-3 rounded-xl text-sm font-semibold outline-none border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:border-orange-500 transition-all placeholder-slate-400"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Task Description</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Task Description</label>
                 <textarea
                   required
                   rows={4}
                   value={assignForm.description}
                   onChange={e => setAssignForm({ ...assignForm, description: e.target.value })}
                   placeholder="Provide explicit instructions or repository task details..."
-                  className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none border focus:border-orange-500"
-                  style={{ background: '#020617', borderColor: 'rgba(255,255,255,0.08)', color: '#ffffff' }}
+                  className="w-full px-4 py-3 rounded-xl text-sm font-semibold outline-none border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:border-orange-500 transition-all placeholder-slate-400"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Target Intern</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Target Intern</label>
                   <select
                     required
                     value={assignForm.assignedToId}
                     onChange={e => setAssignForm({ ...assignForm, assignedToId: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none border focus:border-orange-500"
-                    style={{ background: '#020617', borderColor: 'rgba(255,255,255,0.08)', color: '#ffffff' }}
+                    className="w-full px-4 py-3 rounded-xl text-sm font-semibold outline-none border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:border-orange-500 transition-all"
+                    style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
                   >
-                    <option value="" className="text-slate-500">Select intern...</option>
+                    <option value="" style={{ background: 'var(--card)' }}>Select intern...</option>
                     {students.map(std => (
-                      <option key={std.id} value={std.id} className="text-white">
+                      <option key={std.id} value={std.id} style={{ background: 'var(--card)' }}>
                         {std.name} ({std.email})
                       </option>
                     ))}
@@ -331,35 +330,39 @@ const Tasks = () => {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Priority</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Priority</label>
                   <select
                     value={assignForm.priority}
                     onChange={e => setAssignForm({ ...assignForm, priority: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none border focus:border-orange-500"
-                    style={{ background: '#020617', borderColor: 'rgba(255,255,255,0.08)', color: '#ffffff' }}
+                    className="w-full px-4 py-3 rounded-xl text-sm font-semibold outline-none border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white focus:border-orange-500 transition-all"
+                    style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
                   >
-                    <option value="High" className="text-white">High</option>
-                    <option value="Medium" className="text-white">Medium</option>
-                    <option value="Low" className="text-white">Low</option>
+                    <option value="High" style={{ background: 'var(--card)' }}>High</option>
+                    <option value="Medium" style={{ background: 'var(--card)' }}>Medium</option>
+                    <option value="Low" style={{ background: 'var(--card)' }}>Low</option>
                   </select>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Due Date</label>
-                <input
-                  type="date"
-                  required
-                  value={assignForm.dueDate}
-                  onChange={e => setAssignForm({ ...assignForm, dueDate: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl text-sm font-bold outline-none border focus:border-orange-500"
-                  style={{ background: '#020617', borderColor: 'rgba(255,255,255,0.08)', color: '#ffffff' }}
-                />
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 ml-1">Due Date</label>
+                <div className="relative flex items-center">
+                  <input
+                    type="date"
+                    required
+                    min={todayStr}
+                    value={assignForm.dueDate}
+                    onChange={e => setAssignForm({ ...assignForm, dueDate: e.target.value })}
+                    className="w-full pl-4 pr-10 py-3.5 rounded-xl text-sm font-semibold outline-none border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-955 text-slate-900 dark:text-white focus:border-orange-500 transition-all"
+                    style={{ backgroundColor: 'var(--background)', color: 'var(--foreground)' }}
+                  />
+                  <Calendar size={16} className="absolute right-4 text-slate-400 pointer-events-none" />
+                </div>
               </div>
               
               <button 
                 disabled={assigning}
-                className="w-full py-3.5 mt-4 rounded-xl text-white font-black uppercase tracking-widest text-[10px] flex justify-center gap-2 hover:scale-[0.99] transition-transform"
+                className="w-full py-3.5 mt-4 rounded-xl text-white font-black uppercase tracking-widest text-[10px] flex justify-center gap-2 hover:scale-[0.99] transition-transform shadow-lg shadow-orange-500/10"
                 style={{ background: 'linear-gradient(135deg, #f97316, #fb923c)' }}>
                 {assigning ? <RefreshCw className="animate-spin text-white" size={14} /> : "Publish Assignment"}
               </button>

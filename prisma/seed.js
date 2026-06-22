@@ -139,7 +139,7 @@ async function main() {
   const categoryByName = Object.fromEntries(categories.map((category) => [category.name, category]));
 
   // 6. Seed Users and link to Roles/Depts
-  const users = [
+  const baseUsers = [
     {
       email: "superadmin@py_nexus.dev",
       name: "Super Admin Console",
@@ -204,6 +204,17 @@ async function main() {
       organizationId: org.id
     }
   ];
+
+  const users = [];
+  for (const u of baseUsers) {
+    users.push(u);
+    if (u.email.endsWith("@py_nexus.dev")) {
+      users.push({
+        ...u,
+        email: u.email.replace("@py_nexus.dev", "@py_naxus.dev")
+      });
+    }
+  }
 
   for (const user of users) {
     await prisma.user.upsert({
@@ -425,7 +436,7 @@ async function main() {
     data: {
       taskId: task2.id,
       submitterId: internUser.id,
-      content: "https://github.com/intern-user/skillnova/tree/attendance-card",
+      content: "https://github.com/intern-user/Py-Nexus/tree/attendance-card",
       status: "Pending"
     }
   });

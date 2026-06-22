@@ -1,5 +1,5 @@
 Add-Type -AssemblyName System.Drawing
-$b = [System.Drawing.Bitmap]::FromFile('d:\internship\project\project\skillnova\skillnova\public\logo.png.bak')
+$b = [System.Drawing.Bitmap]::FromFile("$PSScriptRoot/public/logo.png.bak")
 $w = $b.Width
 $h = $b.Height
 
