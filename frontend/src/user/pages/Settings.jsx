@@ -107,7 +107,7 @@ const Settings = () => {
       {/* 2FA Setup Modal */}
       {show2FA && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-center p-4 animate-in fade-in duration-300">
-           <Card className="max-w-md w-full p-8 relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl rounded-[2rem]">
+           <Card className="max-w-md w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl rounded-[2rem]">
               <div className="text-center mb-6">
                  <ShieldCheck size={40} className="text-blue-500 mx-auto mb-4" />
                  <h2 className="text-xl font-black tracking-tight mb-2">Enable 2FA</h2>
@@ -145,7 +145,7 @@ const Settings = () => {
 
       <div className="grid gap-6">
         {/* Core Profile & Security */}
-        <Card className="p-8 border-orange-500/20">
+        <Card className="p-6 sm:p-8 border-orange-500/20">
            <div className="flex items-center gap-3 mb-8">
               <User size={20} className="text-orange-500" />
               <h3 className="text-base font-black tracking-widest uppercase">Identity & Credentials</h3>

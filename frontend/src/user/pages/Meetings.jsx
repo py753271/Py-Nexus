@@ -74,7 +74,7 @@ const AIBubble = ({ msg, isLatest, onActionClick }) => {
 
           <button
             onClick={handleCopy}
-            className="absolute top-3 right-3 p-1.5 rounded-lg opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-all text-slate-400 hover:text-orange-500 bg-white/80 dark:bg-slate-900/80 backdrop-blur"
+            className="absolute top-3 right-3 p-1.5 rounded-lg lg:opacity-0 lg:group-hover:opacity-60 hover:!opacity-100 transition-all text-slate-400 hover:text-orange-500 bg-white/80 dark:bg-slate-900/80 backdrop-blur"
           >
             {copied ? <Check size={13} className="text-emerald-500" /> : <Copy size={13} />}
           </button>
@@ -209,10 +209,10 @@ const Meetings = () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 animate-in fade-in duration-700 pb-4" style={{ height: "calc(100vh - 10rem)" }}>
+    <div className="flex flex-col lg:flex-row gap-6 animate-in fade-in duration-700 pb-4 h-auto lg:h-[calc(100vh-10rem)]">
 
       {/* ── Chat Container ─────────────────────────────── */}
-      <div className="flex-1 flex flex-col rounded-3xl border overflow-hidden bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-xl dark:shadow-2xl">
+      <div className="flex-1 h-[500px] lg:h-full flex flex-col rounded-3xl border overflow-hidden bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-xl dark:shadow-2xl">
 
         {/* Header */}
         <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between flex-shrink-0">
@@ -361,7 +361,7 @@ const Meetings = () => {
                   <span>{s.emoji}</span>
                   {s.text}
                 </span>
-                <ChevronRight size={13} className="opacity-0 group-hover:opacity-100 transition-all text-orange-500" />
+                <ChevronRight size={13} className="lg:opacity-0 lg:group-hover:opacity-100 transition-all text-orange-500" />
               </button>
             ))}
           </div>

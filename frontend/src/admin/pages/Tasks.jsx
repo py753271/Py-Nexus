@@ -275,8 +275,8 @@ const Tasks = () => {
 
       {/* TASK ASSIGNMENT MODAL */}
       {showAssignModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <Card className="w-full max-w-lg p-8 relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[24px] shadow-2xl flex flex-col text-slate-800 dark:text-white">
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[24px] shadow-2xl flex flex-col text-slate-800 dark:text-white">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-amber-500" />
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-black tracking-tight text-slate-900 dark:text-white">Issue Intern Task</h3>
@@ -373,8 +373,8 @@ const Tasks = () => {
 
       {/* GRADING & REVIEW MODAL */}
       {showGradeModal && selectedSubmission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
-          <Card className="w-full max-w-md p-8 relative overflow-hidden" style={{ background: '#0f172a', borderColor: 'rgba(255,109,52,0.1)' }}>
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative overflow-hidden" style={{ background: '#0f172a', borderColor: 'rgba(255,109,52,0.1)' }}>
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-amber-500" />
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-black tracking-tight text-white">Evaluate Submission</h3>

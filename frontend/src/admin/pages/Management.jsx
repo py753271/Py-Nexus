@@ -245,7 +245,7 @@ const Management = () => {
       />
 
       {/* Tabs Menu */}
-      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-6">
+      <div className="flex flex-wrap border-b border-slate-200 dark:border-slate-800 gap-x-6 gap-y-2">
         {[
           { id: "interns", label: "Asset Registry", icon: Users },
           { id: "depts", label: "Sectors (Departments)", icon: Building2 },
@@ -335,7 +335,7 @@ const Management = () => {
                       {u.mentor?.name ? `Nina Instructor` : (u.role === 'STUDENT' ? "Nina Instructor" : "N/A")}
                     </td>
                     <td className="px-6 py-5">
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                      <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-all">
                         <button
                           onClick={() => handleOpenEditUser(u)}
                           className="p-2 text-orange-500 hover:bg-orange-500/10 rounded-xl border border-transparent hover:border-orange-500/20"
@@ -387,7 +387,7 @@ const Management = () => {
                     <td className="px-6 py-5">
                       <button
                         onClick={() => handleDeleteDept(d.id)}
-                        className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
+                        className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl lg:opacity-0 lg:group-hover:opacity-100 transition-all"
                       >
                         <Trash2 size={16} />
                       </button>
@@ -485,8 +485,8 @@ const Management = () => {
 
       {/* MODAL 1: ADD USER */}
       {showUserModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <Card className="w-full max-w-md p-8 relative overflow-hidden" style={{ background: 'var(--card)' }}>
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative overflow-hidden" style={{ background: 'var(--card)' }}>
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-orange-300" />
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black tracking-tight" style={{ color: 'var(--foreground)' }}>User Deployment</h3>
@@ -543,8 +543,8 @@ const Management = () => {
 
       {/* MODAL 2: EDIT USER (ROLE, DEPT, MENTOR) */}
       {showEditUserModal && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <Card className="w-full max-w-md p-8 relative overflow-hidden" style={{ background: 'var(--card)' }}>
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative overflow-hidden" style={{ background: 'var(--card)' }}>
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-orange-300" />
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black tracking-tight" style={{ color: 'var(--foreground)' }}>Manage user mapping</h3>
@@ -620,8 +620,8 @@ const Management = () => {
 
       {/* MODAL 3: ADD DEPT */}
       {showDeptModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <Card className="w-full max-w-md p-8 relative overflow-hidden" style={{ background: 'var(--card)' }}>
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative overflow-hidden" style={{ background: 'var(--card)' }}>
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-orange-300" />
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black tracking-tight" style={{ color: 'var(--foreground)' }}>Create Sector</h3>
@@ -665,8 +665,8 @@ const Management = () => {
 
       {/* MODAL 4: ADD ROLE */}
       {showRoleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <Card className="w-full max-w-lg p-8 relative overflow-hidden" style={{ background: 'var(--card)' }}>
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative overflow-hidden" style={{ background: 'var(--card)' }}>
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-orange-300" />
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black tracking-tight" style={{ color: 'var(--foreground)' }}>Provision Role Policy</h3>

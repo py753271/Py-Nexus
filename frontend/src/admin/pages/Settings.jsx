@@ -94,7 +94,7 @@ const Settings = () => {
       {/* 2FA Setup Modal */}
       {show2FA && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex justify-center items-center p-4 animate-in fade-in duration-300">
-           <Card className="max-w-md w-full p-8 relative overflow-hidden bg-[#020617] border border-white/5 shadow-2xl rounded-[2rem]">
+           <Card className="max-w-md w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative overflow-hidden bg-[#020617] border border-white/5 shadow-2xl rounded-[2rem]">
               <div className="text-center mb-6">
                  <ShieldCheck size={40} className="text-orange-500 mx-auto mb-4" />
                  <h2 className="text-xl font-black tracking-tight mb-2 text-white">Enable 2FA</h2>
@@ -132,7 +132,7 @@ const Settings = () => {
 
       <div className="space-y-6">
         {SECTIONS.map(section => (
-          <Card key={section.title} className="p-8 bg-[#020617] border-white/5 shadow-2xl relative overflow-hidden group">
+          <Card key={section.title} className="p-6 sm:p-8 bg-[#020617] border-white/5 shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-5 transition-opacity">
                {section.icon && <section.icon size={80} strokeWidth={0.5} className="text-orange-500" />}
             </div>

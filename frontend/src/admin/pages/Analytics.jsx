@@ -89,7 +89,7 @@ const Analytics = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Performance Bar Chart (Category Distribution) */}
-        <Card className="lg:col-span-2 p-8 overflow-hidden">
+        <Card className="lg:col-span-2 p-6 sm:p-8 overflow-hidden">
           <div className="flex items-center justify-between mb-10">
             <div>
               <h3 className="text-xl font-black tracking-tight mb-1" style={{ color: 'var(--foreground)' }}>Sector Distribution</h3>
@@ -127,7 +127,7 @@ const Analytics = () => {
         </Card>
 
         {/* Resource Deployment Pie Chart */}
-        <Card className="p-8 flex flex-col justify-between overflow-hidden relative">
+        <Card className="p-6 sm:p-8 flex flex-col justify-between overflow-hidden relative">
           <div>
             <h3 className="text-xl font-black tracking-tight mb-2" style={{ color: 'var(--foreground)' }}>Module Engagement</h3>
             <p className="text-sm font-medium mb-8" style={{ color: 'var(--muted)' }}>Distribution of knowledge assets</p>

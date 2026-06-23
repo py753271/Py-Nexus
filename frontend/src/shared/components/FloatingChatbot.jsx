@@ -238,7 +238,7 @@ const FloatingChatbot = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="fixed sm:bottom-24 sm:right-6 bottom-20 right-4 z-50 w-[calc(100vw-2rem)] sm:w-96 h-[500px] sm:h-[550px] bg-slate-900/95 dark:bg-slate-950/98 backdrop-blur-xl rounded-[28px] border border-slate-800 shadow-2xl flex flex-col overflow-hidden text-white font-sans"
+            className="fixed sm:bottom-24 sm:right-6 bottom-20 right-4 z-50 w-[calc(100vw-2rem)] sm:w-96 h-[500px] sm:h-[550px] max-h-[calc(100vh-7rem)] bg-slate-900/95 dark:bg-slate-950/98 backdrop-blur-xl rounded-[28px] border border-slate-800 shadow-2xl flex flex-col overflow-hidden text-white font-sans"
           >
             {/* Header */}
             <div className="px-5 py-4 border-b border-slate-800/60 flex items-center justify-between bg-slate-950/50 backdrop-blur-md flex-shrink-0 z-10">

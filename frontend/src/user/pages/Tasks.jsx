@@ -208,8 +208,8 @@ const Tasks = () => {
 
       {/* SUBMISSION MODAL */}
       {showSubmitModal && selectedTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <Card className="w-full max-w-md p-8 relative overflow-hidden" style={{ background: 'var(--card)' }}>
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative overflow-hidden" style={{ background: 'var(--card)' }}>
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-orange-300" />
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black tracking-tight" style={{ color: 'var(--foreground)' }}>Task Submission</h3>

@@ -85,7 +85,7 @@ const KnowledgeBase = () => {
       />
 
       {showForm && (
-        <Card className="p-10 relative border-orange-500/20 bg-white dark:bg-[#020617] animate-in slide-in-from-top-6 duration-500">
+        <Card className="p-6 sm:p-10 relative border-orange-500/20 bg-white dark:bg-[#020617] animate-in slide-in-from-top-6 duration-500">
            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-amber-500" />
            <div className="flex justify-between items-center mb-8">
               <h3 className="text-sm font-black uppercase tracking-[0.2em] text-orange-500">Initialize Resource Deployment</h3>
@@ -186,7 +186,7 @@ const KnowledgeBase = () => {
                     <Badge variant={a.verified ? "success" : "warning"}>{a.verified ? "CERTIFIED" : "AUDIT PENDING"}</Badge>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100 transition-all">
+                    <div className="flex items-center justify-center gap-3 lg:opacity-0 lg:group-hover:opacity-100 transition-all">
                       <button 
                         onClick={() => toggleVerify(a.id)} 
                         className={`p-3 rounded-xl transition-all active:scale-90 border ${a.verified ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'}`}

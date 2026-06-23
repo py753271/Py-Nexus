@@ -46,7 +46,7 @@ const Sidebar = ({ active, onNavigate, onLogout }) => {
         {!collapsed && (
           <button
             onClick={() => setCollapsed(true)}
-            className="p-1.5 rounded-lg transition-all active:scale-90"
+            className="p-1.5 rounded-lg transition-all active:scale-90 hidden lg:inline-flex"
             style={{ background: 'var(--background)', border: '1px solid var(--border)', color: 'var(--muted)' }}
           >
             <ChevronLeft size={16} />
@@ -55,7 +55,7 @@ const Sidebar = ({ active, onNavigate, onLogout }) => {
       </div>
 
       {collapsed && (
-        <div className="flex justify-center py-4">
+        <div className="flex justify-center py-4 hidden lg:block">
            <button
             onClick={() => setCollapsed(false)}
             className="p-1.5 rounded-lg transition-all active:scale-90"

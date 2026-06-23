@@ -62,13 +62,13 @@ const KnowledgeBase = () => {
           <ChevronLeft size={16} /> Back to Library
         </button>
         <div className="max-w-4xl">
-          <h1 className="text-4xl font-black tracking-tight mb-4">{selectedCourse.title}</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight mb-4">{selectedCourse.title}</h1>
           <p className="text-lg opacity-60 mb-8">{selectedCourse.description}</p>
-          <Card className="p-8">
+          <Card className="p-6 sm:p-8">
             <h3 className="font-black uppercase tracking-widest text-orange-500 mb-6">Course Syllabus</h3>
             <div className="space-y-3">
               {selectedCourse.lessons?.map(l => (
-                <div key={l.id} className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div key={l.id} className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <span className="font-black text-sm">{l.title}</span>
                   <Badge variant="gray">Sequence {l.order}</Badge>
                 </div>
@@ -87,9 +87,9 @@ const KnowledgeBase = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-12">
-      <div className="rounded-3xl p-10 text-center relative overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl">
+      <div className="rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden bg-slate-900 border border-slate-800 shadow-2xl">
         <div className="relative z-10">
-          <h1 className="text-4xl font-black tracking-tight text-white mb-2 uppercase">Intelligence Repository</h1>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white mb-2 uppercase">Intelligence Repository</h1>
           <p className="text-slate-400 text-sm font-black uppercase tracking-widest mb-8 opacity-60">Training, Documentation & Operational Assets</p>
           <div className="relative max-w-xl mx-auto flex gap-3">
              <div className="relative flex-1">

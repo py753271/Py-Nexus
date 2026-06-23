@@ -71,7 +71,7 @@ const Analytics = () => {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-2 p-8 min-h-[400px] flex flex-col">
+        <Card className="lg:col-span-2 p-6 sm:p-8 min-h-[400px] flex flex-col">
           <h3 className="text-xl font-black mb-8">Weekly Performance</h3>
           {safeData.weeklyReports?.some(r => r.reports > 0) ? (
             <div className="flex-1">
@@ -93,7 +93,7 @@ const Analytics = () => {
           )}
         </Card>
 
-        <Card className="p-8 min-h-[400px] flex flex-col">
+        <Card className="p-6 sm:p-8 min-h-[400px] flex flex-col">
           <h3 className="text-xl font-black mb-8">Skill Distribution</h3>
           {safeData.skillDistribution?.length > 0 && safeData.skillDistribution[0].name !== "Exploration" ? (
             <div className="flex-1 italic flex flex-col items-center">
@@ -130,7 +130,7 @@ const Analytics = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Task Progress */}
-        <Card className="p-8">
+        <Card className="p-6 sm:p-8">
           <div className="flex items-center gap-3 mb-8 text-orange-500">
             <Target size={20} />
             <h3 className="text-xl font-black mt-1">Operational Progress</h3>
@@ -158,7 +158,7 @@ const Analytics = () => {
         </Card>
 
         {/* Top Articles */}
-        <Card className="p-8">
+        <Card className="p-6 sm:p-8">
           <div className="flex items-center gap-3 mb-8 text-emerald-500">
             <TrendingUp size={20} />
             <h3 className="text-xl font-black mt-1">Trending Intelligence</h3>

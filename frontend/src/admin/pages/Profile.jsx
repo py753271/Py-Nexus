@@ -97,8 +97,8 @@ const AdminProfile = () => {
           />
         </div>
 
-        <div className="px-8 pb-8">
-          <div className="flex items-end gap-5 -mt-12 mb-8">
+        <div className="px-6 sm:px-8 pb-6 sm:pb-8">
+          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-5 -mt-12 mb-8 text-center sm:text-left">
             <div
               className="w-24 h-24 rounded-2xl border-4 flex items-center justify-center text-3xl font-black text-white shadow-xl flex-shrink-0 relative overflow-hidden group"
               style={{
@@ -111,7 +111,7 @@ const AdminProfile = () => {
               <div className="absolute inset-0 bg-orange-500/10 group-hover:bg-orange-500/20 transition-colors" />
             </div>
             
-            <div className="pb-1 flex-1">
+            <div className="pb-1 flex-1 w-full">
               <h2 className="text-xl font-black text-white tracking-tight">
                 {profile.name || "Loading..."}
               </h2>
@@ -120,11 +120,11 @@ const AdminProfile = () => {
               </p>
             </div>
             
-            <div className="pb-1">
+            <div className="pb-1 w-full sm:w-auto">
               {!editing ? (
                 <button
                   onClick={() => setEditing(true)}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:bg-white/5 active:scale-95 border border-white/10 text-white"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all hover:bg-white/5 active:scale-95 border border-white/10 text-white"
                 >
                   <Edit size={14} /> System Override
                 </button>
@@ -132,7 +132,7 @@ const AdminProfile = () => {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-orange-600 transition-all active:scale-95 shadow-lg shadow-orange-500/20 disabled:opacity-50"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-orange-600 transition-all active:scale-95 shadow-lg shadow-orange-500/20 disabled:opacity-50"
                 >
                   <Save size={14} /> {saving ? "Writing DB..." : "Commit Changes"}
                 </button>

@@ -67,7 +67,7 @@ const Announcements = () => {
         {filtered.map(a => (
           <Card key={a.id} className="p-6 transition relative border border-slate-100 dark:border-slate-800"
             style={{ borderLeft: a.pinned ? '4px solid #f97316' : '' }}>
-            <div className="flex items-start justify-between gap-6">
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">
                   {a.pinned && <Badge variant="orange" className="bg-orange-50 text-orange-600 border-orange-100"><Pin size={10} className="mr-1" /> Pinned</Badge>}
@@ -81,7 +81,7 @@ const Announcements = () => {
               </div>
               <button
                 onClick={() => togglePin(a.id)}
-                className={`p-3 rounded-2xl transition flex-shrink-0 ${a.pinned ? 'bg-orange-50 text-orange-500' : 'bg-slate-50 text-slate-400 opacity-0 group-hover:opacity-100'}`}
+                className={`p-3 rounded-2xl transition flex-shrink-0 w-fit sm:w-auto ${a.pinned ? 'bg-orange-50 text-orange-500' : 'bg-slate-50 text-slate-400 lg:opacity-0 lg:group-hover:opacity-100'}`}
               >
                 <Pin size={18} />
               </button>

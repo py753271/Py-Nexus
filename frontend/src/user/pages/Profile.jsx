@@ -91,7 +91,7 @@ const Profile = () => {
         </div>
 
         <div className="px-6 pb-6">
-          <div className="flex items-end gap-4 -mt-10 mb-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-end gap-4 -mt-10 mb-6 text-center sm:text-left">
             <div
               className="w-20 h-20 rounded-2xl border-4 flex items-center justify-center text-2xl font-black text-white shadow-xl flex-shrink-0"
               style={{
@@ -102,7 +102,7 @@ const Profile = () => {
             >
               {getInitials(profile.name)}
             </div>
-            <div className="pb-1 flex-1">
+            <div className="pb-1 flex-1 w-full">
               <h2 className="text-lg font-black" style={{ color: "var(--foreground)" }}>
                 {profile.name || "Loading..."}
               </h2>
@@ -110,11 +110,11 @@ const Profile = () => {
                 {profile.role} · {profile.department}
               </p>
             </div>
-            <div className="pb-1">
+            <div className="pb-1 w-full sm:w-auto">
               {!editing ? (
                 <button
                   onClick={() => setEditing(true)}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95"
                   style={{ border: "1px solid var(--border)", color: "var(--muted)", background: "var(--background)" }}
                 >
                   <Edit size={14} /> Edit Profile
@@ -123,7 +123,7 @@ const Profile = () => {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all active:scale-95 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-bold hover:bg-emerald-600 transition-all active:scale-95 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
                 >
                   <Save size={14} /> {saving ? "Updating..." : "Save Changes"}
                 </button>

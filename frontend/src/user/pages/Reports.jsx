@@ -59,7 +59,7 @@ const Reports = () => {
       />
 
       {showForm && (
-        <Card className="p-6 relative border-[#f97316]">
+        <Card className="p-4 sm:p-6 relative border-[#f97316]">
           <div className="flex justify-between mb-4">
             <h3 className="text-sm font-black uppercase tracking-widest text-orange-500">Initialize Submission</h3>
             <button onClick={() => setShowForm(false)}><X size={20} /></button>
@@ -101,23 +101,25 @@ const Reports = () => {
 
       <div className="space-y-4">
         {filtered.map(report => (
-          <Card key={report.id} hover className="p-6 group relative">
-            <div className="flex items-center gap-6">
-              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-800">
-                <FileText size={22} className="text-orange-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-black tracking-tight mb-1">{report.title}</h3>
-                <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest opacity-40">
-                   <span>{new Date(report.createdAt).toLocaleDateString()}</span>
+          <Card key={report.id} hover className="p-4 sm:p-6 group relative">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+              <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-800 flex-shrink-0">
+                  <FileText size={22} className="text-orange-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-lg font-black tracking-tight mb-1 truncate">{report.title}</h3>
+                  <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest opacity-40">
+                     <span>{new Date(report.createdAt).toLocaleDateString()}</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-4 w-full sm:w-auto justify-end sm:justify-start">
                 <Badge variant={report.status === "Reviewed" ? "success" : "warning"}>
                   {report.status.toUpperCase()}
                 </Badge>
                 {report.score && (
-                  <div className="flex flex-col items-end">
+                  <div className="flex flex-col items-end border-l border-slate-200 dark:border-white/5 pl-4">
                      <p className="text-[8px] font-black uppercase tracking-widest mb-0.5 opacity-60">Efficiency Score</p>
                      <span className="text-base font-black flex items-center gap-2">
                         <TrendingUp size={14} className="text-emerald-500" /> {report.score}<span className="text-[10px] font-bold opacity-30">/10</span>

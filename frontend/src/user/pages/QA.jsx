@@ -69,7 +69,7 @@ const QA = () => {
         }
       />
 
-      <Card className="p-6 relative overflow-hidden" 
+      <Card className="p-4 sm:p-6 relative overflow-hidden" 
         style={{ background: 'var(--background)', border: '1px solid #f97316' }}>
         <h3 className="text-sm font-black uppercase tracking-widest mb-4" style={{ color: '#f97316' }}>Initiate New Thread</h3>
         <div className="flex flex-col sm:flex-row gap-4">
@@ -120,7 +120,7 @@ const QA = () => {
 
       <div className="space-y-4">
         {filtered.map(q => (
-          <Card key={q.id} hover className="p-6 group transition-all">
+          <Card key={q.id} hover className="p-4 sm:p-6 group transition-all">
             <div className="flex items-start gap-6">
               <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
                 <button

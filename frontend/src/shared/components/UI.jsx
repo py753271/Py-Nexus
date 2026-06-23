@@ -126,12 +126,12 @@ export const Toggle = ({ checked, onChange }) => (
 
 /* ── SectionHeader ───────────────────────────── */
 export const SectionHeader = ({ title, subtitle, action }) => (
-  <div className="flex items-center justify-between mb-8">
+  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
     <div>
       <h2 className="text-2xl font-black tracking-tight" style={{ color: "var(--foreground)" }}>{title}</h2>
       {subtitle && <p className="text-sm font-medium mt-1" style={{ color: "var(--muted)" }}>{subtitle}</p>}
     </div>
-    {action && <div>{action}</div>}
+    {action && <div className="flex-shrink-0">{action}</div>}
   </div>
 );
 

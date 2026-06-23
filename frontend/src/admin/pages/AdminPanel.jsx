@@ -82,7 +82,7 @@ const AdminPanel = () => {
         }
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
         {[
           { label: "Onboarded",  value: users.length, color: "#f97316" },
           { label: "Admins",     value: users.filter(u => u.role === "ADMIN").length, color: "#8b5cf6" },
@@ -158,7 +158,7 @@ const AdminPanel = () => {
       {/* Onboarding Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-           <Card className="w-full max-w-md p-8 relative overflow-hidden" style={{ background: 'var(--card)' }}>
+           <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative overflow-hidden" style={{ background: 'var(--card)' }}>
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-orange-300" />
               <div className="flex items-center justify-between mb-8">
                  <h3 className="text-xl font-black tracking-tight" style={{ color: 'var(--foreground)' }}>Asset Onboarding</h3>
