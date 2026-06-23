@@ -59,7 +59,15 @@ const authLimiter = rateLimit({
 // Middlewares
 app.use(helmet());
 
-const allowedOrigins = process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : ['http://localhost:5173'];
+let allowedOrigins = ['http://localhost:5173'];
+if (process.env.FRONTEND_URL) {
+    let origin = process.env.FRONTEND_URL.trim().replace(/\/$/, "");
+    if (!origin.startsWith('http://') && !origin.startsWith('https://')) {
+        origin = 'https://' + origin;
+    }
+    allowedOrigins.push(origin);
+}
+
 app.use(cors({
     origin: allowedOrigins,
     credentials: true,
@@ -124,4 +132,5 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`CORS Allowed Origins: ${allowedOrigins.join(', ')}`);
 });
