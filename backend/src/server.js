@@ -118,7 +118,30 @@ app.get('/', (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
-    res.status(200).json({ status: 'UP', message: 'Py Nexus API is running.' });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (apiKey) {
+        const https = require('https');
+        const url = `https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`;
+        https.get(url, (apiRes) => {
+            let body = '';
+            apiRes.on('data', (chunk) => body += chunk);
+            apiRes.on('end', () => {
+                try {
+                    const parsed = JSON.parse(body);
+                    const supportedModels = parsed.models
+                        ?.filter(m => m.supportedGenerationMethods?.includes('generateContent'))
+                        ?.map(m => m.name);
+                    res.status(200).json({ status: 'UP', models: supportedModels, raw: parsed });
+                } catch (e) {
+                    res.status(200).json({ status: 'UP', error: e.message, raw: body });
+                }
+            });
+        }).on('error', (err) => {
+            res.status(200).json({ status: 'UP', error: err.message });
+        });
+    } else {
+        res.status(200).json({ status: 'UP', message: 'GEMINI_API_KEY is not configured.' });
+    }
 });
 
 // 404 Handler
