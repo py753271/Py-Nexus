@@ -22,11 +22,14 @@ const callGeminiAPI = (prompt) => {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Content-Length': data.length
+                'Content-Length': Buffer.byteLength(data)
             }
         };
 
         const req = https.request(options, (res) => {
+            if (res.statusCode !== 200) {
+                console.error("Gemini HTTP Error");
+            }
             let body = '';
             res.on('data', (chunk) => body += chunk);
             res.on('end', () => {
@@ -35,10 +38,29 @@ const callGeminiAPI = (prompt) => {
                     const responseText = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (responseText) {
                         resolve(responseText);
+                    } else if (parsed.error) {
+                        console.error("[DEBUG] res.statusCode:", res.statusCode);
+                        console.error("[DEBUG] raw response body:", body);
+                        console.error("[DEBUG] parsed error object:", JSON.stringify(parsed.error));
+                        console.error("[DEBUG] parsed.error.code:", parsed.error.code);
+                        console.error("[DEBUG] parsed.error.message:", parsed.error.message);
+                        console.error("[DEBUG] parsed.error.status:", parsed.error.status);
+                        reject(new Error(parsed.error.message));
+                    } else if (parsed.candidates) {
+                        console.error("[DEBUG] res.statusCode:", res.statusCode);
+                        console.error("[DEBUG] raw response body:", body);
+                        console.error("[DEBUG] parsed JSON:", JSON.stringify(parsed));
+                        reject(new Error("Gemini API candidates empty or generation blocked."));
                     } else {
+                        console.error("[DEBUG] res.statusCode:", res.statusCode);
+                        console.error("[DEBUG] raw response body:", body);
+                        console.error("[DEBUG] parsed JSON:", JSON.stringify(parsed));
                         reject(new Error("Failed to parse Gemini API response."));
                     }
                 } catch (e) {
+                    console.error("[DEBUG] res.statusCode:", res.statusCode);
+                    console.error("[DEBUG] raw response body:", body);
+                    console.error("[DEBUG] Exception stack trace during parsing:", e.stack || e);
                     reject(e);
                 }
             });
