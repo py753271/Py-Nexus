@@ -202,16 +202,15 @@ const FloatingChatbot = () => {
       return;
     }
 
+    const freshVoices = (typeof window !== "undefined" && window.speechSynthesis) ? window.speechSynthesis.getVoices() : [];
+    const selectedVoice = selectedVoiceName ? freshVoices.find(v => v.name === selectedVoiceName) : null;
+
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utteranceRef.current = utterance; // Retain reference to prevent garbage collection
     
-    if (selectedVoiceName && typeof window !== "undefined" && window.speechSynthesis) {
-      const freshVoices = window.speechSynthesis.getVoices();
-      const selectedVoice = freshVoices.find(v => v.name === selectedVoiceName);
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        console.log("[SpeechSynthesis] Selected voice config:", selectedVoice.name);
-      }
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+      console.log("[SpeechSynthesis] Selected voice config:", selectedVoice.name);
     }
 
     utterance.onend = () => {
