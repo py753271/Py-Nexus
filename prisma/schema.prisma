@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../backend/node_modules/.prisma/client"
 }
 
 datasource db {
@@ -63,7 +64,8 @@ model User {
   comments          ForumComment[]
   notifications     Notification[]
   auditLogs         AuditLog[]
-
+  chatMessages      ChatMessage[]
+  
   // Security Credentials
   twoFactorSecret   String?       @map("two_factor_secret")
   isTwoFactorActive Boolean       @default(false) @map("is_two_factor_active")
@@ -405,4 +407,18 @@ model InternshipBatch {
   createdAt DateTime          @default(now()) @map("created_at")
 
   @@map("internship_batches")
+}
+
+model ChatMessage {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sender       String   // "user" or "bot"
+  text         String
+  responseTime Float?   @map("response_time")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@map("chat_messages")
+  @@index([userId], map: "idx_chat_messages_user_id")
+  @@index([createdAt], map: "idx_chat_messages_created_at")
 }

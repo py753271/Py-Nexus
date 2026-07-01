@@ -2,11 +2,26 @@ const https = require('https');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const promptCache = new Map();
+const CACHE_TTL_MS = parseInt(process.env.AI_CACHE_TTL_MS) || 5 * 60 * 1000; // default 5 minutes
+
 const callGeminiAPI = (prompt) => {
+    // Check prompt cache
+    const cached = promptCache.get(prompt);
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+        return Promise.resolve(cached.data);
+    }
+
     return new Promise((resolve, reject) => {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
-            return reject(new Error("GEMINI_API_KEY is not configured."));
+            const err = new Error("GEMINI_API_KEY is not configured.");
+            console.error(JSON.stringify({
+                event: "AI_FAILURE",
+                error: err.message,
+                timestamp: new Date().toISOString()
+            }));
+            return reject(err);
         }
 
         const data = JSON.stringify({
@@ -28,7 +43,11 @@ const callGeminiAPI = (prompt) => {
 
         const req = https.request(options, (res) => {
             if (res.statusCode !== 200) {
-                console.error("Gemini HTTP Error");
+                console.error(JSON.stringify({
+                    event: "AI_HTTP_ERROR",
+                    statusCode: res.statusCode,
+                    timestamp: new Date().toISOString()
+                }));
             }
             let body = '';
             res.on('data', (chunk) => body += chunk);
@@ -37,40 +56,67 @@ const callGeminiAPI = (prompt) => {
                     const parsed = JSON.parse(body);
                     const responseText = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (responseText) {
+                        // Cache successful response
+                        promptCache.set(prompt, { data: responseText, timestamp: Date.now() });
                         resolve(responseText);
                     } else if (parsed.error) {
-                        console.error("[DEBUG] res.statusCode:", res.statusCode);
-                        console.error("[DEBUG] raw response body:", body);
-                        console.error("[DEBUG] parsed error object:", JSON.stringify(parsed.error));
-                        console.error("[DEBUG] parsed.error.code:", parsed.error.code);
-                        console.error("[DEBUG] parsed.error.message:", parsed.error.message);
-                        console.error("[DEBUG] parsed.error.status:", parsed.error.status);
-                        reject(new Error(parsed.error.message));
+                        const errMessage = parsed.error.message || "Failed to parse Gemini API response.";
+                        console.error(JSON.stringify({
+                            event: "AI_FAILURE",
+                            statusCode: res.statusCode,
+                            error: errMessage,
+                            rawError: parsed.error,
+                            timestamp: new Date().toISOString()
+                        }));
+                        reject(new Error(errMessage));
                     } else if (parsed.candidates) {
-                        console.error("[DEBUG] res.statusCode:", res.statusCode);
-                        console.error("[DEBUG] raw response body:", body);
-                        console.error("[DEBUG] parsed JSON:", JSON.stringify(parsed));
-                        reject(new Error("Gemini API candidates empty or generation blocked."));
+                        const errMessage = "Gemini API candidates empty or generation blocked.";
+                        console.error(JSON.stringify({
+                            event: "AI_FAILURE",
+                            statusCode: res.statusCode,
+                            error: errMessage,
+                            rawResponse: parsed,
+                            timestamp: new Date().toISOString()
+                        }));
+                        reject(new Error(errMessage));
                     } else {
-                        console.error("[DEBUG] res.statusCode:", res.statusCode);
-                        console.error("[DEBUG] raw response body:", body);
-                        console.error("[DEBUG] parsed JSON:", JSON.stringify(parsed));
-                        reject(new Error("Failed to parse Gemini API response."));
+                        const errMessage = "Failed to parse Gemini API response.";
+                        console.error(JSON.stringify({
+                            event: "AI_FAILURE",
+                            statusCode: res.statusCode,
+                            error: errMessage,
+                            rawResponse: parsed,
+                            timestamp: new Date().toISOString()
+                        }));
+                        reject(new Error(errMessage));
                     }
                 } catch (e) {
-                    console.error("[DEBUG] res.statusCode:", res.statusCode);
-                    console.error("[DEBUG] raw response body:", body);
-                    console.error("[DEBUG] Exception stack trace during parsing:", e.stack || e);
+                    console.error(JSON.stringify({
+                        event: "AI_FAILURE",
+                        error: e.message,
+                        stack: e.stack,
+                        timestamp: new Date().toISOString()
+                    }));
                     reject(e);
                 }
             });
         });
 
-        req.on('error', (e) => reject(e));
+        req.on('error', (e) => {
+            console.error(JSON.stringify({
+                event: "AI_FAILURE",
+                error: e.message,
+                stack: e.stack,
+                timestamp: new Date().toISOString()
+            }));
+            reject(e);
+        });
         req.write(data);
         req.end();
     });
 };
+
+exports.callGeminiAPI = callGeminiAPI;
 
 const FALLBACK_RESPONSES = {
     "what are my active courses?": "You are currently enrolled in 'Web Development Fundamentals' and 'Modern Database Systems'. Please visit your dashboard to continue your lessons.",

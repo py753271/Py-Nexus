@@ -8,12 +8,48 @@ exports.queryIntelligence = asyncWrapper(async (req, res, next) => {
     const { query } = req.body;
     const userId = req.user.userId;
 
-    if (!query || query.trim() === '') {
-        return res.status(400).json({ success: false, message: 'Query is required' });
+    if (!query || typeof query !== 'string' || query.trim() === '') {
+        return res.status(400).json({ success: false, message: 'Query is required and must be a string' });
     }
 
+    if (query.trim().length > 2000) {
+        return res.status(400).json({ success: false, message: 'Query exceeds maximum length of 2000 characters' });
+    }
+
+    // Save user message to database
+    await prisma.chatMessage.create({
+        data: {
+            userId,
+            sender: 'user',
+            text: query.trim()
+        }
+    });
+
+    const startTime = Date.now();
     const reply = await aiService.chatAssistant(query.trim(), userId);
-    res.status(200).json({ success: true, text: reply });
+    const responseTimeSec = (Date.now() - startTime) / 1000;
+
+    // Save AI response to database
+    await prisma.chatMessage.create({
+        data: {
+            userId,
+            sender: 'bot',
+            text: reply,
+            responseTime: responseTimeSec
+        }
+    });
+
+    res.status(200).json({ success: true, text: reply, responseTime: responseTimeSec });
+});
+
+// Fetch previous conversation history
+exports.getChatHistory = asyncWrapper(async (req, res, next) => {
+    const userId = req.user.userId;
+    const messages = await prisma.chatMessage.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'asc' }
+    });
+    res.status(200).json({ success: true, messages });
 });
 
 // Fetch AI learning recommendations
@@ -60,40 +96,14 @@ Keep the tone encouraging, technical, and professional.
 
     let insights = "";
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (apiKey) {
-            // Re-use core HTTPS call logic
-            const aiServiceFile = require('../services/aiService');
-            // Since callGeminiAPI isn't exported directly, we call the chat assistant or mock it
-            // We can just call the Gemini endpoint by exporting or using a clean wrapper
-            // Let's write a quick inline request helper or fallback
-            const https = require('https');
-            const callGemini = (p) => new Promise((resolve, reject) => {
-                const data = JSON.stringify({ contents: [{ parts: [{ text: p }] }] });
-                const opt = {
-                    hostname: 'generativelanguage.googleapis.com',
-                    port: 443,
-                    path: `/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Content-Length': data.length }
-                };
-                const request = https.request(opt, (r) => {
-                    let b = '';
-                    r.on('data', (c) => b += c);
-                    r.on('end', () => {
-                        const parsedObj = JSON.parse(b);
-                        resolve(parsedObj.candidates?.[0]?.content?.parts?.[0]?.text || "");
-                    });
-                });
-                request.on('error', (e) => reject(e));
-                request.write(data);
-                request.end();
-            });
-            insights = await callGemini(prompt);
-        } else {
-            throw new Error("No API key");
-        }
+        insights = await aiService.callGeminiAPI(prompt);
     } catch (e) {
+        console.error(JSON.stringify({
+            event: "CONTROLLER_INSIGHTS_FAILURE",
+            error: e.message,
+            stack: e.stack,
+            timestamp: new Date().toISOString()
+        }));
         insights = `**Performance Evaluation Fallback**:\nYour average task grade is **${avgTaskScore}/10** and your report grade is **${avgReportScore}/10** with an attendance of **${attendanceRate}%**.\n- *Strength*: Steady report filing.\n- *Advise*: Focus on solving daily tasks on time to maximize performance rankings.`;
     }
 

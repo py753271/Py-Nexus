@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MessageCircle, X, Send, Bot, Sparkles, AlertCircle, RefreshCw, Cpu, Zap, Info } from "lucide-react";
+import { MessageCircle, X, Send, Bot, Sparkles, AlertCircle, RefreshCw, Cpu, Zap, Info, Copy, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../../utils/api";
 import { useUser } from "../../context/UserContext";
+import { marked } from "marked";
 
 const STUDENT_SUGGESTIONS = [
   { text: "My active courses?", query: "what are my active courses?", icon: "📖" },
@@ -86,6 +87,21 @@ const FloatingChatbot = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const messagesEndRef = useRef(null);
+  const [copiedId, setCopiedId] = useState(null);
+  const textareaRef = useRef(null);
+
+  const adjustHeight = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  };
+
+  useEffect(() => {
+    if (input === "" && textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+  }, [input]);
 
   // Sync welcome message on login / user object retrieval
   useEffect(() => {
@@ -98,6 +114,31 @@ const FloatingChatbot = () => {
       },
     ]);
   }, [user]);
+
+  // Load chat history from backend on open
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const res = await api.get("/ai/history");
+        if (res.data.success && res.data.messages.length > 0) {
+          const mapped = res.data.messages.map(m => ({
+            id: m.id.toString(),
+            sender: m.sender,
+            text: m.text,
+            timestamp: m.createdAt,
+            responseTime: m.responseTime
+          }));
+          setMessages(mapped);
+        }
+      } catch (err) {
+        console.error("[Failed to load chat history]", err);
+      }
+    };
+
+    if (isOpen && user) {
+      loadHistory();
+    }
+  }, [isOpen, user]);
 
   useEffect(() => {
     const checkAiStatus = async () => {
@@ -143,7 +184,8 @@ const FloatingChatbot = () => {
           id: (Date.now() + 1).toString(),
           sender: "bot",
           text: res.data.text,
-          timestamp: new Date()
+          timestamp: new Date(),
+          responseTime: res.data.responseTime
         };
         setMessages((prev) => [...prev, botMessage]);
         
@@ -160,6 +202,53 @@ const FloatingChatbot = () => {
         timestamp: new Date()
       };
       setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = (id, text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleRegenerate = async (botMessageId) => {
+    const idx = messages.findIndex(m => m.id === botMessageId);
+    if (idx === -1) return;
+
+    const userMsg = messages.slice(0, idx).reverse().find(m => m.sender === 'user');
+    if (!userMsg) return;
+
+    // Filter out the bot response that is being regenerated
+    setMessages(prev => prev.filter(m => m.id !== botMessageId));
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await api.post("/ai/query", { query: userMsg.text });
+      if (res.data.success) {
+        const newBotMsg = {
+          id: botMessageId,
+          sender: "bot",
+          text: res.data.text,
+          timestamp: new Date(),
+          responseTime: res.data.responseTime
+        };
+        setMessages(prev => [...prev, newBotMsg]);
+        if (res.data.text.includes("[Neural Engine Offline Mode]")) {
+          setIsAiConfigured(false);
+        }
+      }
+    } catch (err) {
+      setError("Failed to regenerate response.");
+      const errBotMsg = {
+        id: botMessageId,
+        sender: "bot",
+        text: "⚠️ System offline. I couldn't reach the AI engine right now. Please check your backend connection.",
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errBotMsg]);
     } finally {
       setLoading(false);
     }
@@ -206,8 +295,40 @@ const FloatingChatbot = () => {
     return text.includes("[Neural Engine Offline Mode]");
   };
 
+  const renderMessageContent = (text) => {
+    try {
+      const htmlContent = marked.parse(text);
+      return (
+        <div 
+          className="markdown-content"
+          dangerouslySetInnerHTML={{ __html: htmlContent }} 
+        />
+      );
+    } catch (e) {
+      return <p className="whitespace-pre-line">{text}</p>;
+    }
+  };
+
   return (
     <>
+      <style>{`
+        .markdown-content h1 { font-size: 1.1rem; font-weight: 700; margin-top: 0.5rem; margin-bottom: 0.25rem; color: #fff; }
+        .markdown-content h2 { font-size: 1rem; font-weight: 700; margin-top: 0.5rem; margin-bottom: 0.25rem; color: #fff; }
+        .markdown-content h3 { font-size: 0.95rem; font-weight: 600; margin-top: 0.5rem; margin-bottom: 0.25rem; color: #fff; }
+        .markdown-content p { margin-bottom: 0.5rem; }
+        .markdown-content ul { list-style-type: disc; padding-left: 1rem; margin-bottom: 0.5rem; }
+        .markdown-content ol { list-style-type: decimal; padding-left: 1rem; margin-bottom: 0.5rem; }
+        .markdown-content li { margin-bottom: 0.25rem; }
+        .markdown-content strong { font-weight: 700; color: #fff; }
+        .markdown-content em { font-style: italic; }
+        .markdown-content code { background-color: rgba(30, 41, 59, 0.7); padding: 0.125rem 0.25rem; border-radius: 0.25rem; font-family: monospace; font-size: 0.85em; color: #f97316; }
+        .markdown-content pre { background-color: rgba(15, 23, 42, 0.95); border: 1px solid rgba(51, 65, 85, 0.5); padding: 0.5rem; border-radius: 0.375rem; overflow-x: auto; margin-top: 0.5rem; margin-bottom: 0.5rem; }
+        .markdown-content pre code { background-color: transparent; padding: 0; color: #e2e8f0; }
+        .markdown-content table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; margin-bottom: 0.5rem; font-size: 10px; }
+        .markdown-content th, .markdown-content td { border: 1px solid rgba(51, 65, 85, 0.5); padding: 0.375rem 0.5rem; text-align: left; }
+        .markdown-content th { background-color: rgba(30, 41, 59, 0.5); font-weight: 600; color: #fff; }
+      `}</style>
+
       {/* Floating Trigger Icon */}
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
         <button
@@ -326,7 +447,7 @@ const FloatingChatbot = () => {
                             : "bg-slate-800/80 border border-slate-800/80 text-slate-200 rounded-tl-none"
                         }`}
                       >
-                        <p className="whitespace-pre-line">{textContent}</p>
+                        {isBot ? renderMessageContent(textContent) : <p className="whitespace-pre-line">{textContent}</p>}
                         
                         {isOffline && (
                           <div className="mt-3 pt-2.5 border-t border-amber-500/10 flex items-start gap-2 text-[10px] text-amber-400/90 font-medium animate-pulse">
@@ -335,9 +456,34 @@ const FloatingChatbot = () => {
                           </div>
                         )}
                       </div>
-                      <span className={`text-[9px] text-slate-500 font-medium px-1 ${msg.sender === "user" ? "text-right" : ""}`}>
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                      
+                      <div className={`flex items-center gap-1.5 px-1 text-[9px] text-slate-500 font-medium ${msg.sender === "user" ? "justify-end" : "justify-start"}`}>
+                        <span>
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {msg.responseTime && (
+                          <span>• Responded in {parseFloat(msg.responseTime).toFixed(1)}s</span>
+                        )}
+                        {isBot && msg.id !== "init" && (
+                          <>
+                            <span className="text-slate-600">•</span>
+                            <button
+                              onClick={() => handleCopy(msg.id, textContent)}
+                              className="hover:text-slate-300 transition-colors flex items-center gap-0.5"
+                              title="Copy response"
+                            >
+                              {copiedId === msg.id ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
+                            </button>
+                            <button
+                              onClick={() => handleRegenerate(msg.id)}
+                              className="hover:text-slate-300 transition-colors flex items-center gap-0.5"
+                              title="Regenerate response"
+                            >
+                              <RefreshCw size={10} />
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -379,12 +525,17 @@ const FloatingChatbot = () => {
             {/* Input Bar */}
             <div className="p-4 border-t border-slate-800/50 bg-slate-950/45 flex-shrink-0 flex items-center gap-2">
               <div className="flex-1 relative flex items-center">
-                <input
+                <textarea
+                  ref={textareaRef}
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    adjustHeight();
+                  }}
                   onKeyDown={handleKeyPress}
                   placeholder="Type your question..."
-                  className="w-full pl-4 pr-10 py-3.5 rounded-2xl bg-slate-800/50 border border-slate-800 focus:border-orange-500/40 outline-none text-xs font-semibold text-white placeholder-slate-500 transition-all duration-300"
+                  rows={1}
+                  className="w-full pl-4 pr-10 py-3 rounded-2xl bg-slate-800/50 border border-slate-800 focus:border-orange-500/40 outline-none text-xs font-semibold text-white placeholder-slate-500 transition-all duration-300 resize-none max-h-24 overflow-y-auto"
                 />
                 <button
                   onClick={() => handleSend(input)}
