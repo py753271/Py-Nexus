@@ -103,6 +103,7 @@ const FloatingChatbot = () => {
 
   const recognitionRef = useRef(null);
   const baseInputRef = useRef("");
+  const utteranceRef = useRef(null);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -195,6 +196,7 @@ const FloatingChatbot = () => {
 
     const cleanText = text.replace(/\[Neural Engine Offline Mode\]/g, "");
     const utterance = new SpeechSynthesisUtterance(cleanText);
+    utteranceRef.current = utterance; // Retain reference to prevent garbage collection
     
     if (selectedVoiceName) {
       const selectedVoice = voices.find(v => v.name === selectedVoiceName);
@@ -205,24 +207,37 @@ const FloatingChatbot = () => {
     }
 
     utterance.onend = () => {
-      setCurrentSpeakingMsgId(null);
-      setIsSpeechPaused(false);
+      if (utteranceRef.current === utterance) {
+        setCurrentSpeakingMsgId(null);
+        setIsSpeechPaused(false);
+        utteranceRef.current = null;
+      }
     };
 
     utterance.onerror = () => {
-      setCurrentSpeakingMsgId(null);
-      setIsSpeechPaused(false);
+      if (utteranceRef.current === utterance) {
+        setCurrentSpeakingMsgId(null);
+        setIsSpeechPaused(false);
+        utteranceRef.current = null;
+      }
     };
 
     setCurrentSpeakingMsgId(msgId);
     setIsSpeechPaused(false);
-    window.speechSynthesis.speak(utterance);
+
+    // Timeout prevents Chrome cancel/speak sync race conditions
+    setTimeout(() => {
+      if (utteranceRef.current === utterance) {
+        window.speechSynthesis.speak(utterance);
+      }
+    }, 50);
   };
 
   const handleStopSpeech = () => {
     window.speechSynthesis.cancel();
     setCurrentSpeakingMsgId(null);
     setIsSpeechPaused(false);
+    utteranceRef.current = null;
   };
 
   useEffect(() => {
