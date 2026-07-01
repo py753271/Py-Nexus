@@ -38,6 +38,7 @@ const certificateRoutes = require('./routes/certificate');
 const notificationRoutes = require('./routes/notification');
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Rate Limiter configuration with development environment bypass
 const globalLimiter = rateLimit({

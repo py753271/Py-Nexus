@@ -5,9 +5,7 @@ const prisma = new PrismaClient();
 const callGeminiAPI = (prompt) => {
     return new Promise((resolve, reject) => {
         const apiKey = process.env.GEMINI_API_KEY;
-        console.log("[DEBUG] API Key exists:", !!apiKey, "length:", apiKey ? apiKey.length : 0);
         if (!apiKey) {
-            console.log("[DEBUG] Rejecting request: GEMINI_API_KEY is not configured.");
             return reject(new Error("GEMINI_API_KEY is not configured."));
         }
 
@@ -16,55 +14,37 @@ const callGeminiAPI = (prompt) => {
                 parts: [{ text: prompt }]
             }]
         });
-        console.log("[DEBUG] Request payload:", data);
 
         const options = {
             hostname: 'generativelanguage.googleapis.com',
             port: 443,
-            path: `/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            path: `/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Content-Length': data.length
             }
         };
-        console.log("[DEBUG] Request URL: https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + (apiKey ? apiKey.substring(0, 4) + "..." : "none"));
 
         const req = https.request(options, (res) => {
-            console.log("[DEBUG] HTTP status code:", res.statusCode);
-            console.log("[DEBUG] Response headers:", JSON.stringify(res.headers));
             let body = '';
             res.on('data', (chunk) => body += chunk);
             res.on('end', () => {
-                console.log("[DEBUG] Raw response body before JSON.parse():", body);
                 try {
                     const parsed = JSON.parse(body);
-                    console.log("[DEBUG] Parsed JSON object:", JSON.stringify(parsed));
-                    if (parsed.error) {
-                        console.log("[DEBUG] error.code:", parsed.error.code);
-                        console.log("[DEBUG] error.message:", parsed.error.message);
-                        console.log("[DEBUG] error.status:", parsed.error.status);
-                    }
                     const responseText = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
                     if (responseText) {
                         resolve(responseText);
                     } else {
-                        console.log("[DEBUG] Rejecting request: responseText is missing. Complete parsed response:", JSON.stringify(parsed));
                         reject(new Error("Failed to parse Gemini API response."));
                     }
                 } catch (e) {
-                    console.log("[DEBUG] Caught exception stack trace:", e.stack || e);
-                    console.log("[DEBUG] Rejecting request due to JSON parse / processing exception:", e.message);
                     reject(e);
                 }
             });
         });
 
-        req.on('error', (e) => {
-            console.log("[DEBUG] Caught request error stack trace:", e.stack || e);
-            console.log("[DEBUG] Rejecting request due to connection error:", e.message);
-            reject(e);
-        });
+        req.on('error', (e) => reject(e));
         req.write(data);
         req.end();
     });
