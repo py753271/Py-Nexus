@@ -196,14 +196,21 @@ const FloatingChatbot = () => {
     window.speechSynthesis.cancel();
 
     const cleanText = text.replace(/\[Neural Engine Offline Mode\]/g, "");
+    console.log("[SpeechSynthesis] Text to speak:", cleanText);
+    if (!cleanText.trim()) {
+      console.warn("[SpeechSynthesis] Speech text is empty, aborting.");
+      return;
+    }
+
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utteranceRef.current = utterance; // Retain reference to prevent garbage collection
     
-    if (selectedVoiceName) {
-      const selectedVoice = voices.find(v => v.name === selectedVoiceName);
+    if (selectedVoiceName && typeof window !== "undefined" && window.speechSynthesis) {
+      const freshVoices = window.speechSynthesis.getVoices();
+      const selectedVoice = freshVoices.find(v => v.name === selectedVoiceName);
       if (selectedVoice) {
         utterance.voice = selectedVoice;
-        utterance.lang = selectedVoice.lang;
+        console.log("[SpeechSynthesis] Selected voice config:", selectedVoice.name);
       }
     }
 
@@ -215,7 +222,8 @@ const FloatingChatbot = () => {
       }
     };
 
-    utterance.onerror = () => {
+    utterance.onerror = (e) => {
+      console.error("[SpeechSynthesis] Utterance error event:", e);
       if (utteranceRef.current === utterance) {
         setCurrentSpeakingMsgId(null);
         setIsSpeechPaused(false);
