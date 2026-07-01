@@ -261,7 +261,7 @@ const FloatingChatbot = () => {
                   </h4>
                   <p className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                     <span className={`h-1.5 w-1.5 rounded-full ${isAiConfigured ? "bg-emerald-500 animate-pulse" : "bg-amber-500 animate-pulse"}`} />
-                    {isAiConfigured ? "Gemini 1.5 Flash Connected" : "Local Assistant Active"}
+                    {isAiConfigured ? "Gemini Connected" : "Local Assistant Active"}
                   </p>
                 </div>
               </div>
