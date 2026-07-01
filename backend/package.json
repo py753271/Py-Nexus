@@ -12,9 +12,6 @@
     "start": "node src/server.js",
     "test": "jest"
   },
-  "prisma": {
-    "seed": "node ../prisma/seed.js"
-  },
   "dependencies": {
     "@prisma/client": "^6.6.0",
     "bcryptjs": "^3.0.3",

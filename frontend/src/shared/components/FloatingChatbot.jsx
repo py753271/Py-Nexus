@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "../../utils/api";
 import { useUser } from "../../context/UserContext";
 import { marked } from "marked";
+import DOMPurify from "dompurify";
 
 const STUDENT_SUGGESTIONS = [
   { text: "My active courses?", query: "what are my active courses?", icon: "📖" },
@@ -391,7 +392,8 @@ const FloatingChatbot = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/ai/query-stream`, {
+      const streamUrl = `${api.defaults.baseURL}/ai/query-stream`;
+      const response = await fetch(streamUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -577,10 +579,11 @@ const FloatingChatbot = () => {
   const renderMessageContent = (text) => {
     try {
       const htmlContent = marked.parse(text);
+      const cleanHtml = DOMPurify.sanitize(htmlContent);
       return (
         <div 
           className="markdown-content"
-          dangerouslySetInnerHTML={{ __html: htmlContent }} 
+          dangerouslySetInnerHTML={{ __html: cleanHtml }} 
         />
       );
     } catch (e) {
@@ -612,7 +615,7 @@ const FloatingChatbot = () => {
       <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className={`p-4 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center relative ${
+          className={`p-4 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center relative focus:ring-2 focus:ring-orange-500 focus:outline-none ${
             isOpen 
               ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900" 
               : "bg-gradient-to-tr from-orange-500 via-amber-500 to-orange-600 text-white hover:shadow-orange-500/25"
@@ -670,7 +673,8 @@ const FloatingChatbot = () => {
                 <button
                   onClick={() => setShowAnalytics(!showAnalytics)}
                   title="Toggle Analytics Dashboard"
-                  className={`p-2 rounded-xl transition-all duration-200 ${
+                  aria-label="Toggle Analytics Dashboard"
+                  className={`p-2 rounded-xl transition-all duration-200 focus:ring-2 focus:ring-orange-500 focus:outline-none ${
                     showAnalytics
                       ? "text-orange-400 bg-slate-800"
                       : "text-slate-400 hover:text-white hover:bg-slate-800/50"
@@ -681,13 +685,15 @@ const FloatingChatbot = () => {
                 <button
                   onClick={handleClearChat}
                   title="Clear conversation"
-                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+                  aria-label="Clear conversation"
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/50 focus:ring-2 focus:ring-orange-500 focus:outline-none transition-all duration-200"
                 >
                   <RefreshCw size={14} />
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all duration-200"
+                  aria-label="Close chatbot window"
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/50 focus:ring-2 focus:ring-orange-500 focus:outline-none transition-all duration-200"
                 >
                   <X size={16} />
                 </button>
@@ -703,7 +709,8 @@ const FloatingChatbot = () => {
                 <select
                   value={selectedVoiceName}
                   onChange={(e) => setSelectedVoiceName(e.target.value)}
-                  className="bg-slate-800 text-slate-200 border border-slate-700 rounded-lg px-2 py-0.5 outline-none max-w-[190px] truncate cursor-pointer hover:bg-slate-700/80 transition-colors"
+                  aria-label="Select Speech Voice"
+                  className="bg-slate-800 text-slate-200 border border-slate-700 rounded-lg px-2 py-0.5 outline-none max-w-[140px] sm:max-w-[190px] truncate cursor-pointer hover:bg-slate-700/80 focus:ring-2 focus:ring-orange-500 focus:outline-none transition-colors"
                 >
                   {voices.map(v => (
                     <option key={v.name} value={v.name}>
@@ -723,7 +730,8 @@ const FloatingChatbot = () => {
                 </div>
                 <button 
                   onClick={() => setShowBanner(false)}
-                  className="absolute right-2 top-2 text-amber-400 hover:text-amber-200 transition-colors"
+                  aria-label="Dismiss warning banner"
+                  className="absolute right-2 top-2 text-amber-400 hover:text-amber-200 focus:ring-1 focus:ring-amber-400 focus:outline-none transition-colors"
                 >
                   <X size={12} />
                 </button>
@@ -737,7 +745,8 @@ const FloatingChatbot = () => {
                   <h5 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">AI Analytics Performance</h5>
                   <button 
                     onClick={() => setShowAnalytics(false)}
-                    className="text-[10px] text-orange-400 hover:text-orange-300 font-bold"
+                    aria-label="Back to Chat"
+                    className="text-[10px] text-orange-400 hover:text-orange-300 font-bold focus:ring-1 focus:ring-orange-400 focus:outline-none rounded"
                   >
                     Back to Chat
                   </button>
@@ -856,14 +865,16 @@ const FloatingChatbot = () => {
                               <span className="text-slate-600">•</span>
                               <button
                                 onClick={() => handleCopy(msg.id, textContent)}
-                                className="hover:text-slate-300 transition-colors flex items-center gap-0.5"
+                                aria-label="Copy response"
+                                className="hover:text-slate-300 focus:ring-1 focus:ring-orange-500 focus:outline-none rounded transition-colors flex items-center gap-0.5"
                                 title="Copy response"
                               >
                                 {copiedId === msg.id ? <Check size={10} className="text-emerald-400" /> : <Copy size={10} />}
                               </button>
                               <button
                                 onClick={() => handleRegenerate(msg.id)}
-                                className="hover:text-slate-300 transition-colors flex items-center gap-0.5"
+                                aria-label="Regenerate response"
+                                className="hover:text-slate-300 focus:ring-1 focus:ring-orange-500 focus:outline-none rounded transition-colors flex items-center gap-0.5"
                                 title="Regenerate response"
                               >
                                 <RefreshCw size={10} />
@@ -874,14 +885,16 @@ const FloatingChatbot = () => {
                                 <div className="flex items-center gap-1.5">
                                   <button
                                     onClick={() => handleSpeak(msg.id, textContent)}
-                                    className="text-orange-400 hover:text-orange-300 transition-colors flex items-center"
+                                    aria-label={isSpeechPaused ? "Resume speaking response" : "Pause speaking response"}
+                                    className="text-orange-400 hover:text-orange-300 focus:ring-1 focus:ring-orange-500 focus:outline-none rounded transition-colors flex items-center"
                                     title={isSpeechPaused ? "Resume" : "Pause"}
                                   >
                                     {isSpeechPaused ? <Play size={10} /> : <Pause size={10} />}
                                   </button>
                                   <button
                                     onClick={handleStopSpeech}
-                                    className="text-red-400 hover:text-red-300 transition-colors flex items-center"
+                                    aria-label="Stop speaking response"
+                                    className="text-red-400 hover:text-red-300 focus:ring-1 focus:ring-orange-500 focus:outline-none rounded transition-colors flex items-center"
                                     title="Stop"
                                   >
                                     <Square size={9} />
@@ -890,7 +903,8 @@ const FloatingChatbot = () => {
                               ) : (
                                 <button
                                   onClick={() => handleSpeak(msg.id, textContent)}
-                                  className="hover:text-slate-300 transition-colors flex items-center"
+                                  aria-label="Speak response aloud"
+                                  className="hover:text-slate-300 focus:ring-1 focus:ring-orange-500 focus:outline-none rounded transition-colors flex items-center"
                                   title="Speak response"
                                 >
                                   <Volume2 size={10} />
@@ -929,7 +943,8 @@ const FloatingChatbot = () => {
                   <button
                     key={i}
                     onClick={() => handleSend(s.query)}
-                    className="px-3.5 py-2 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800 hover:border-orange-500/40 text-[10px] font-bold text-slate-300 hover:text-white transition-all duration-300 flex items-center gap-1.5 shadow-sm active:scale-95"
+                    aria-label={`Ask suggestion: ${s.text}`}
+                    className="px-3.5 py-2 rounded-xl border border-slate-800 bg-slate-900/60 hover:bg-slate-800 hover:border-orange-500/40 focus:ring-2 focus:ring-orange-500 focus:outline-none text-[10px] font-bold text-slate-300 hover:text-white transition-all duration-300 flex items-center gap-1.5 shadow-sm active:scale-95"
                   >
                     <span>{s.icon}</span>
                     <span>{s.text}</span>
@@ -943,7 +958,8 @@ const FloatingChatbot = () => {
               <div className="p-4 border-t border-slate-800/50 bg-slate-950/45 flex-shrink-0 flex items-center gap-2">
                 <button
                   onClick={toggleRecording}
-                  className={`p-2.5 rounded-xl border transition-all duration-200 flex-shrink-0 ${
+                  aria-label={isRecording ? "Stop recording voice query" : "Record voice query"}
+                  className={`p-2.5 rounded-xl border transition-all duration-200 flex-shrink-0 focus:ring-2 focus:ring-orange-500 focus:outline-none ${
                     isRecording 
                       ? "bg-red-500/10 border-red-500/30 text-red-500 animate-pulse" 
                       : "bg-slate-800/30 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800/60"
@@ -963,12 +979,13 @@ const FloatingChatbot = () => {
                     onKeyDown={handleKeyPress}
                     placeholder="Type your question..."
                     rows={1}
-                    className="w-full pl-4 pr-10 py-3 rounded-2xl bg-slate-800/50 border border-slate-800 focus:border-orange-500/40 outline-none text-xs font-semibold text-white placeholder-slate-500 transition-all duration-300 resize-none max-h-24 overflow-y-auto"
+                    className="w-full pl-4 pr-10 py-3 rounded-2xl bg-slate-800/50 border border-slate-800 focus:border-orange-500/40 focus:ring-2 focus:ring-orange-500 outline-none text-xs font-semibold text-white placeholder-slate-500 transition-all duration-300 resize-none max-h-24 overflow-y-auto"
                   />
                   {isStreaming ? (
                     <button
                       onClick={handleCancelStream}
-                      className="absolute right-2 p-2 rounded-xl bg-red-500 hover:bg-red-600 text-white hover:scale-105 active:scale-95 transition-all duration-200 shadow-md shadow-red-500/20"
+                      aria-label="Stop generation"
+                      className="absolute right-2 p-2 rounded-xl bg-red-500 hover:bg-red-600 text-white hover:scale-105 active:scale-95 focus:ring-2 focus:ring-red-500 focus:outline-none transition-all duration-200 shadow-md shadow-red-500/20"
                       title="Stop generation"
                     >
                       <X size={14} />
@@ -977,7 +994,8 @@ const FloatingChatbot = () => {
                     <button
                       onClick={() => handleSend(input)}
                       disabled={loading || !input.trim()}
-                      className="absolute right-2 p-2 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white disabled:opacity-30 hover:scale-105 active:scale-95 transition-all duration-200 shadow-md shadow-orange-500/20 disabled:pointer-events-none"
+                      aria-label="Send message"
+                      className="absolute right-2 p-2 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white disabled:opacity-30 hover:scale-105 active:scale-95 focus:ring-2 focus:ring-orange-500 focus:outline-none transition-all duration-200 shadow-md shadow-orange-500/20 disabled:pointer-events-none"
                     >
                       <Send size={14} />
                     </button>
