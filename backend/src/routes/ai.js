@@ -14,6 +14,7 @@ const aiLimiter = rateLimit({
 });
 
 router.post('/query', verifyToken, aiLimiter, aiController.queryIntelligence);
+router.post('/query-stream', verifyToken, aiLimiter, aiController.streamQueryIntelligence);
 router.get('/insights', verifyToken, aiLimiter, aiController.getPerformanceInsights);
 router.get('/recommendations', verifyToken, aiLimiter, aiController.getRecommendations);
 router.get('/history', verifyToken, aiController.getChatHistory);

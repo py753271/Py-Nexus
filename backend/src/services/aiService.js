@@ -118,6 +118,105 @@ const callGeminiAPI = (prompt) => {
 
 exports.callGeminiAPI = callGeminiAPI;
 
+const streamGeminiAPI = (prompt, onChunk, onError, onEnd) => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        const err = new Error("GEMINI_API_KEY is not configured.");
+        console.error(JSON.stringify({
+            event: "AI_FAILURE",
+            error: err.message,
+            timestamp: new Date().toISOString()
+        }));
+        return onError(err);
+    }
+
+    const data = JSON.stringify({
+        contents: [{
+            parts: [{ text: prompt }]
+        }]
+    });
+
+    const options = {
+        hostname: 'generativelanguage.googleapis.com',
+        port: 443,
+        path: `/v1/models/gemini-2.5-flash:streamGenerateContent?key=${apiKey}`,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(data)
+        }
+    };
+
+    const req = https.request(options, (res) => {
+        if (res.statusCode !== 200) {
+            console.error(JSON.stringify({
+                event: "AI_HTTP_ERROR",
+                statusCode: res.statusCode,
+                timestamp: new Date().toISOString()
+            }));
+        }
+
+        let buffer = '';
+        let braceCount = 0;
+        let jsonStartIndex = -1;
+
+        res.on('data', (chunk) => {
+            const str = chunk.toString();
+            buffer += str;
+
+            let i = 0;
+            while (i < buffer.length) {
+                const char = buffer[i];
+                if (char === '{') {
+                    if (braceCount === 0) {
+                        jsonStartIndex = i;
+                    }
+                    braceCount++;
+                } else if (char === '}') {
+                    braceCount--;
+                    if (braceCount === 0 && jsonStartIndex !== -1) {
+                        const jsonStr = buffer.slice(jsonStartIndex, i + 1);
+                        try {
+                            const parsed = JSON.parse(jsonStr);
+                            const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text;
+                            if (text) {
+                                onChunk(text);
+                            }
+                        } catch (err) {
+                            // ignore partial JSON parse errors
+                        }
+                        buffer = buffer.slice(i + 1);
+                        i = -1; // Reset search index
+                        jsonStartIndex = -1;
+                    }
+                }
+                i++;
+            }
+        });
+
+        res.on('end', () => {
+            onEnd();
+        });
+    });
+
+    req.on('error', (e) => {
+        console.error(JSON.stringify({
+            event: "AI_FAILURE",
+            error: e.message,
+            stack: e.stack,
+            timestamp: new Date().toISOString()
+        }));
+        onError(e);
+    });
+
+    req.write(data);
+    req.end();
+
+    return req;
+};
+
+exports.streamGeminiAPI = streamGeminiAPI;
+
 const FALLBACK_RESPONSES = {
     "what are my active courses?": "You are currently enrolled in 'Web Development Fundamentals' and 'Modern Database Systems'. Please visit your dashboard to continue your lessons.",
     "summarize latest announcements": "Latest Announcement: 'Mid-term Internship Evaluation is scheduled for next Monday. Ensure all pending reports and tasks are submitted.'",

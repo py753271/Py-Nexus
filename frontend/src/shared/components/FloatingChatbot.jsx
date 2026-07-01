@@ -89,6 +89,8 @@ const FloatingChatbot = () => {
   const messagesEndRef = useRef(null);
   const [copiedId, setCopiedId] = useState(null);
   const textareaRef = useRef(null);
+  const abortControllerRef = useRef(null);
+  const [isStreaming, setIsStreaming] = useState(false);
 
   const adjustHeight = () => {
     if (textareaRef.current) {
@@ -177,33 +179,141 @@ const FloatingChatbot = () => {
     setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
 
-    try {
-      const res = await api.post("/ai/query", { query });
-      if (res.data.success) {
-        const botMessage = {
+    if (!isAiConfigured) {
+      try {
+        const res = await api.post("/ai/query", { query });
+        if (res.data.success) {
+          const botMessage = {
+            id: (Date.now() + 1).toString(),
+            sender: "bot",
+            text: res.data.text,
+            timestamp: new Date(),
+            responseTime: res.data.responseTime
+          };
+          setMessages((prev) => [...prev, botMessage]);
+        }
+      } catch (err) {
+        setError("Failed to connect to assistant.");
+        const errorMessage = {
           id: (Date.now() + 1).toString(),
           sender: "bot",
-          text: res.data.text,
-          timestamp: new Date(),
-          responseTime: res.data.responseTime
+          text: "⚠️ System offline. I couldn't reach the AI engine right now. Please check your backend connection.",
+          timestamp: new Date()
         };
-        setMessages((prev) => [...prev, botMessage]);
+        setMessages((prev) => [...prev, errorMessage]);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    setIsStreaming(true);
+    const botMessageId = (Date.now() + 1).toString();
+    const botMessagePlaceholder = {
+      id: botMessageId,
+      sender: "bot",
+      text: "",
+      timestamp: new Date()
+    };
+    setMessages((prev) => [...prev, botMessagePlaceholder]);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/ai/query-stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : ''
+        },
+        body: JSON.stringify({ query }),
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = '';
+
+      setLoading(false);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunkStr = decoder.decode(value, { stream: true });
+        const lines = chunkStr.split('\n');
         
-        if (res.data.text.includes("[Neural Engine Offline Mode]")) {
-          setIsAiConfigured(false);
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataStr = line.replace('data: ', '').trim();
+            if (!dataStr) continue;
+
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.error) {
+                setError(parsed.error);
+                accumulatedText += `\n⚠️ Error: ${parsed.error}`;
+              } else if (parsed.text) {
+                accumulatedText += parsed.text;
+              } else if (parsed.done) {
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === botMessageId
+                      ? { ...msg, text: accumulatedText, responseTime: parsed.responseTime }
+                      : msg
+                  )
+                );
+                break;
+              }
+
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === botMessageId
+                    ? { ...msg, text: accumulatedText }
+                    : msg
+                )
+              );
+            } catch (jsonErr) {
+              // ignore partial chunks
+            }
+          }
         }
       }
     } catch (err) {
-      setError("Failed to connect to assistant.");
-      const errorMessage = {
-        id: (Date.now() + 1).toString(),
-        sender: "bot",
-        text: "⚠️ System offline. I couldn't reach the AI engine right now. Please check your backend connection.",
-        timestamp: new Date()
-      };
-      setMessages((prev) => [...prev, errorMessage]);
+      if (err.name === 'AbortError') {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === botMessageId
+              ? { ...msg, text: accumulatedText + " *(Generation cancelled by user)*" }
+              : msg
+          )
+        );
+      } else {
+        setError("Failed to connect to assistant.");
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === botMessageId
+              ? { ...msg, text: "⚠️ System offline. I couldn't reach the AI engine right now. Please check your backend connection." }
+              : msg
+          )
+        );
+      }
     } finally {
       setLoading(false);
+      setIsStreaming(false);
+      abortControllerRef.current = null;
+    }
+  };
+
+  const handleCancelStream = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
   };
 
@@ -426,6 +536,9 @@ const FloatingChatbot = () => {
                 const isBot = msg.sender === "bot";
                 const isOffline = isBot && isOfflineMessage(msg.text);
                 const textContent = isBot ? cleanMessageText(msg.text) : msg.text;
+                
+                const isLatest = messages[messages.length - 1]?.id === msg.id;
+                const showCursor = isStreaming && isBot && isLatest && !msg.text.endsWith("*(Generation cancelled by user)*");
 
                 return (
                   <div
@@ -447,7 +560,12 @@ const FloatingChatbot = () => {
                             : "bg-slate-800/80 border border-slate-800/80 text-slate-200 rounded-tl-none"
                         }`}
                       >
-                        {isBot ? renderMessageContent(textContent) : <p className="whitespace-pre-line">{textContent}</p>}
+                        <div className="inline-block max-w-full">
+                          {isBot ? renderMessageContent(textContent) : <p className="whitespace-pre-line">{textContent}</p>}
+                        </div>
+                        {showCursor && (
+                          <span className="inline-block w-1.5 h-3.5 bg-orange-500 ml-1.5 animate-pulse rounded-sm" style={{ verticalAlign: 'middle' }} />
+                        )}
                         
                         {isOffline && (
                           <div className="mt-3 pt-2.5 border-t border-amber-500/10 flex items-start gap-2 text-[10px] text-amber-400/90 font-medium animate-pulse">
@@ -537,13 +655,23 @@ const FloatingChatbot = () => {
                   rows={1}
                   className="w-full pl-4 pr-10 py-3 rounded-2xl bg-slate-800/50 border border-slate-800 focus:border-orange-500/40 outline-none text-xs font-semibold text-white placeholder-slate-500 transition-all duration-300 resize-none max-h-24 overflow-y-auto"
                 />
-                <button
-                  onClick={() => handleSend(input)}
-                  disabled={loading || !input.trim()}
-                  className="absolute right-2 p-2 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white disabled:opacity-30 hover:scale-105 active:scale-95 transition-all duration-200 shadow-md shadow-orange-500/20 disabled:pointer-events-none"
-                >
-                  <Send size={14} />
-                </button>
+                {isStreaming ? (
+                  <button
+                    onClick={handleCancelStream}
+                    className="absolute right-2 p-2 rounded-xl bg-red-500 hover:bg-red-600 text-white hover:scale-105 active:scale-95 transition-all duration-200 shadow-md shadow-red-500/20"
+                    title="Stop generation"
+                  >
+                    <X size={14} />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleSend(input)}
+                    disabled={loading || !input.trim()}
+                    className="absolute right-2 p-2 rounded-xl bg-gradient-to-tr from-orange-500 to-amber-500 text-white disabled:opacity-30 hover:scale-105 active:scale-95 transition-all duration-200 shadow-md shadow-orange-500/20 disabled:pointer-events-none"
+                  >
+                    <Send size={14} />
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>

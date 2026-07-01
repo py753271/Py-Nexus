@@ -170,3 +170,72 @@ describe('aiService - chatAssistant fallback mode', () => {
         expect(result).toContain("Web Development Fundamentals");
     });
 });
+
+describe('aiService - streamGeminiAPI', () => {
+    let originalEnv;
+
+    beforeAll(() => {
+        originalEnv = { ...process.env };
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+        process.env = { ...originalEnv };
+    });
+
+    it('should call onError if GEMINI_API_KEY is missing', (done) => {
+        delete process.env.GEMINI_API_KEY;
+        aiService.streamGeminiAPI(
+            'prompt',
+            () => {},
+            (err) => {
+                expect(err.message).toBe('GEMINI_API_KEY is not configured.');
+                done();
+            },
+            () => {}
+        );
+    });
+
+    it('should stream chunks and end successfully', (done) => {
+        process.env.GEMINI_API_KEY = 'mock_key';
+
+        const chunk1 = '{"candidates": [{"content": {"parts": [{"text": "Hello"}]}}]}';
+        const chunk2 = '{"candidates": [{"content": {"parts": [{"text": " world!"}]}}]}';
+
+        const mockRequest = {
+            on: jest.fn(),
+            write: jest.fn(),
+            end: jest.fn()
+        };
+
+        https.request.mockImplementation((options, callback) => {
+            const mockResponse = {
+                statusCode: 200,
+                on: jest.fn((event, cb) => {
+                    if (event === 'data') {
+                        cb(Buffer.from(chunk1));
+                        cb(Buffer.from(chunk2));
+                    }
+                    if (event === 'end') {
+                        cb();
+                    }
+                })
+            };
+            callback(mockResponse);
+            return mockRequest;
+        });
+
+        const chunks = [];
+        aiService.streamGeminiAPI(
+            'Hello stream',
+            (text) => chunks.push(text),
+            (err) => {
+                done(err);
+            },
+            () => {
+                expect(chunks).toEqual(['Hello', ' world!']);
+                done();
+            }
+        );
+    });
+});

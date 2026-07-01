@@ -109,3 +109,69 @@ Keep the tone encouraging, technical, and professional.
 
     res.status(200).json({ success: true, data: insights });
 });
+
+// Query chat assistant with streaming response (SSE)
+exports.streamQueryIntelligence = asyncWrapper(async (req, res, next) => {
+    const { query } = req.body;
+    const userId = req.user.userId;
+
+    if (!query || typeof query !== 'string' || query.trim() === '') {
+        return res.status(400).json({ success: false, message: 'Query is required and must be a string' });
+    }
+
+    if (query.trim().length > 2000) {
+        return res.status(400).json({ success: false, message: 'Query exceeds maximum length of 2000 characters' });
+    }
+
+    // Save user query to database
+    await prisma.chatMessage.create({
+        data: {
+            userId,
+            sender: 'user',
+            text: query.trim()
+        }
+    });
+
+    // Setup Server-Sent Events headers
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const startTime = Date.now();
+    let botReply = '';
+
+    const geminiReq = aiService.streamGeminiAPI(
+        query.trim(),
+        (chunk) => {
+            botReply += chunk;
+            res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
+        },
+        async (err) => {
+            res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+            res.end();
+        },
+        async () => {
+            const responseTimeSec = (Date.now() - startTime) / 1000;
+            
+            // Save bot reply to database on successful stream completion
+            await prisma.chatMessage.create({
+                data: {
+                    userId,
+                    sender: 'bot',
+                    text: botReply,
+                    responseTime: responseTimeSec
+                }
+            });
+
+            res.write(`data: ${JSON.stringify({ done: true, responseTime: responseTimeSec })}\n\n`);
+            res.end();
+        }
+    );
+
+    req.on('close', () => {
+        if (geminiReq) {
+            geminiReq.destroy();
+        }
+    });
+});
