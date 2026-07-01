@@ -175,3 +175,85 @@ exports.streamQueryIntelligence = asyncWrapper(async (req, res, next) => {
         }
     });
 });
+
+// Fetch AI metrics and daily usage statistics for the analytics dashboard
+exports.getAiAnalytics = asyncWrapper(async (req, res, next) => {
+    // 1. Get total requests (bot messages)
+    const totalRequests = await prisma.chatMessage.count({
+        where: { sender: 'bot' }
+    });
+
+    // 2. Get failed requests
+    // We identify failures by the error prefix '⚠️' or local fallback marker
+    const failedRequests = await prisma.chatMessage.count({
+        where: {
+            sender: 'bot',
+            OR: [
+                { text: { startsWith: '⚠️' } },
+                { text: { contains: '[Neural Engine Offline Mode]' } }
+            ]
+        }
+    });
+
+    const successRequests = totalRequests - failedRequests;
+    const successRate = totalRequests > 0 ? (successRequests / totalRequests) * 100 : 100;
+
+    // 3. Average latency
+    const latencyAggregate = await prisma.chatMessage.aggregate({
+        where: {
+            sender: 'bot',
+            responseTime: { not: null },
+            NOT: [
+                { text: { startsWith: '⚠️' } },
+                { text: { contains: '[Neural Engine Offline Mode]' } }
+            ]
+        },
+        _avg: {
+            responseTime: true
+        }
+    });
+    const avgLatency = latencyAggregate._avg.responseTime || 0;
+
+    // 4. Cache Stats
+    const cacheStats = aiService.getCacheStats();
+
+    // 5. Daily usage (last 7 days)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const messages = await prisma.chatMessage.findMany({
+        where: {
+            createdAt: { gte: sevenDaysAgo },
+            sender: 'bot'
+        },
+        select: {
+            createdAt: true
+        }
+    });
+
+    const dailyUsage = {};
+    // Pre-populate last 7 days with 0
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().split('T')[0];
+        dailyUsage[key] = 0;
+    }
+
+    messages.forEach(m => {
+        const key = m.createdAt.toISOString().split('T')[0];
+        if (dailyUsage[key] !== undefined) {
+            dailyUsage[key]++;
+        }
+    });
+
+    res.status(200).json({
+        success: true,
+        data: {
+            totalRequests,
+            successRate,
+            failedRequests,
+            avgLatency,
+            cacheHits: cacheStats.cacheHits,
+            dailyUsage
+        }
+    });
+});

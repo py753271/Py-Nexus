@@ -5,12 +5,21 @@ const prisma = new PrismaClient();
 const promptCache = new Map();
 const CACHE_TTL_MS = parseInt(process.env.AI_CACHE_TTL_MS) || 5 * 60 * 1000; // default 5 minutes
 
+let cacheHits = 0;
+let cacheMisses = 0;
+
+const getCacheStats = () => {
+    return { cacheHits, cacheMisses };
+};
+
 const callGeminiAPI = (prompt) => {
     // Check prompt cache
     const cached = promptCache.get(prompt);
     if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+        cacheHits++;
         return Promise.resolve(cached.data);
     }
+    cacheMisses++;
 
     return new Promise((resolve, reject) => {
         const apiKey = process.env.GEMINI_API_KEY;
@@ -216,6 +225,7 @@ const streamGeminiAPI = (prompt, onChunk, onError, onEnd) => {
 };
 
 exports.streamGeminiAPI = streamGeminiAPI;
+exports.getCacheStats = getCacheStats;
 
 const FALLBACK_RESPONSES = {
     "what are my active courses?": "You are currently enrolled in 'Web Development Fundamentals' and 'Modern Database Systems'. Please visit your dashboard to continue your lessons.",

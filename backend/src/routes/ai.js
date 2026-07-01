@@ -18,6 +18,7 @@ router.post('/query-stream', verifyToken, aiLimiter, aiController.streamQueryInt
 router.get('/insights', verifyToken, aiLimiter, aiController.getPerformanceInsights);
 router.get('/recommendations', verifyToken, aiLimiter, aiController.getRecommendations);
 router.get('/history', verifyToken, aiController.getChatHistory);
+router.get('/analytics', verifyToken, aiController.getAiAnalytics);
 router.get('/status', verifyToken, (req, res) => {
     res.status(200).json({
         success: true,
